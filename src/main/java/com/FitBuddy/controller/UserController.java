@@ -3,6 +3,7 @@ package com.FitBuddy.controller;
 import com.FitBuddy.model.domain.User;
 import com.FitBuddy.model.request.UserLoginRequest;
 import com.FitBuddy.service.UserService;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import com.FitBuddy.common.BaseResponse;
 import com.FitBuddy.common.ErrorCode;
@@ -18,6 +19,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.FitBuddy.constant.UserConstant.USER_LOGIN_STATE;
 
@@ -28,7 +30,7 @@ import static com.FitBuddy.constant.UserConstant.USER_LOGIN_STATE;
  */
 @RestController
 @RequestMapping("/user")
-@CrossOrigin(origins = {"http://localhost:3000"})
+@CrossOrigin(origins = {"http://localhost:5173"})
 @Slf4j
 public class UserController {
     @Resource
@@ -89,19 +91,7 @@ public class UserController {
         return ResultUtils.success(safetyUser);
     }
 
-//    @GetMapping("/search")
-//    public BaseResponse<List<User>> searchUsers(String username, HttpServletRequest request) {
-//        if (!userService.isAdmin(request)) {
-//            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-//        }
-//        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-//        if (StringUtils.isNotBlank(username)) {
-//            queryWrapper.like("username", username);
-//        }
-//        List<User> userList = userService.list(queryWrapper);
-//        List<User> list = userList.stream().map(user -> userService.getSafetyUser(user)).collect(Collectors.toList());
-//        return ResultUtils.success(list);
-//    }
+
 
     @GetMapping("/search/tags")
     public BaseResponse<List<User>> searchUsersByTags(@RequestParam(required = false) List<String> tagNameList) {
@@ -110,6 +100,20 @@ public class UserController {
         }
         List<User> userList = userService.searchUsersByTags(tagNameList);
         return ResultUtils.success(userList);
+    }
+    //通过用户名字搜索用户
+    @GetMapping("/search")
+    public BaseResponse<List<User>> searchUsers( String username,HttpServletRequest request) {
+        if(!userService.isAdmin(request)){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        QueryWrapper queryWrapper = new QueryWrapper<>();
+        if(!StringUtils.isEmpty(username)){
+            queryWrapper.like("username",username);
+        }
+        List<User> userList = userService.list(queryWrapper);
+        List<User> lsit = userList.stream().map(user -> userService.getSafetyUser(user)).collect(Collectors.toList());
+        return ResultUtils.success(lsit);
     }
 
     // todo 推荐多个，未实现
@@ -147,16 +151,16 @@ public class UserController {
 //        return ResultUtils.success(result);
 //    }
 
-//    @PostMapping("/delete")
-//    public BaseResponse<Boolean> deleteUser(@RequestBody long id, HttpServletRequest request) {
-//        if (!userService.isAdmin(request)) {
-//            throw new BusinessException(ErrorCode.NO_AUTH);
-//        }
-//        if (id <= 0) {
-//            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-//        }
-//        boolean b = userService.removeById(id);
-//        return ResultUtils.success(b);
-//    }
+    @PostMapping("/delete")
+    public BaseResponse<Boolean> deleteUser(@RequestBody long id, HttpServletRequest request) {
+        if (!userService.isAdmin(request)) {
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        if (id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        boolean b = userService.removeById(id);
+        return ResultUtils.success(b);
+    }
 
 }

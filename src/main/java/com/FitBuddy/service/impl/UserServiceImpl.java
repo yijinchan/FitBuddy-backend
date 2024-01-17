@@ -186,6 +186,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }).map(this::getSafetyUser).collect(Collectors.toList());
     }
 
+    @Override
+    public boolean isAdmin(HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        return user.getRole() == 1;
+    }
+
 }
 
 
