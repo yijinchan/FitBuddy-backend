@@ -1,15 +1,16 @@
 package com.yijinchan.controller;
 
-import com.yijinchan.model.domain.User;
-import com.yijinchan.model.request.UserLoginRequest;
-import com.yijinchan.service.UserService;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import lombok.extern.slf4j.Slf4j;
 import com.yijinchan.common.BaseResponse;
 import com.yijinchan.common.ErrorCode;
 import com.yijinchan.common.ResultUtils;
 import com.yijinchan.exception.BusinessException;
+import com.yijinchan.model.domain.User;
+import com.yijinchan.model.request.UserLoginRequest;
 import com.yijinchan.model.request.UserRegisterRequest;
+import com.yijinchan.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.CollectionUtils;
@@ -17,11 +18,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.yijinchan.constant.UserConstant.USER_LOGIN_STATE;
+import static com.yijinchan.constant.UserConstants.USER_LOGIN_STATE;
 
 /**
  * 用户接口
@@ -116,28 +116,7 @@ public class UserController {
         return ResultUtils.success(lsit);
     }
 
-    // todo 推荐多个，未实现
-//    @GetMapping("/recommend")
-//    public BaseResponse<Page<User>> recommendUsers(long pageSize, long pageNum, HttpServletRequest request) {
-//        User loginUser = userService.getLoginUser(request);
-//        String redisKey = String.format("yupao:user:recommend:%s", loginUser.getId());
-//        ValueOperations<String, Object> valueOperations = redisTemplate.opsForValue();
-//        // 如果有缓存，直接读缓存
-//        Page<User> userPage = (Page<User>) valueOperations.get(redisKey);
-//        if (userPage != null) {
-//            return ResultUtils.success(userPage);
-//        }
-//        // 无缓存，查数据库
-//        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-//        userPage = userService.page(new Page<>(pageNum, pageSize), queryWrapper);
-//        // 写缓存
-//        try {
-//            valueOperations.set(redisKey, userPage, 30000, TimeUnit.MILLISECONDS);
-//        } catch (Exception e) {
-//            log.error("redis set key error", e);
-//        }
-//        return ResultUtils.success(userPage);
-//    }
+
 
 
     @PostMapping("/update")
@@ -165,5 +144,10 @@ public class UserController {
         boolean b = userService.removeById(id);
         return ResultUtils.success(b);
     }
-
+    //推荐页面
+    @GetMapping("/recommend")
+    public BaseResponse recommendUser(long currentPage) {
+        Page<User> userPage = userService.recommendUser(currentPage);
+        return ResultUtils.success(userPage);
+    }
 }

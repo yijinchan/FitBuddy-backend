@@ -1,8 +1,10 @@
 package com.yijinchan.service.impl;
 
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -14,6 +16,7 @@ import com.yijinchan.mapper.UserMapper;
 import com.yijinchan.service.UserService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
@@ -25,8 +28,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.yijinchan.constant.UserConstant.ADMIN_ROLE;
-import static com.yijinchan.constant.UserConstant.USER_LOGIN_STATE;
+import static com.yijinchan.constant.RedisConstants.RECOMMEND_KEY;
+import static com.yijinchan.constant.SystemConstants.PAGE_SIZE;
+import static com.yijinchan.constant.UserConstants.ADMIN_ROLE;
+import static com.yijinchan.constant.UserConstants.USER_LOGIN_STATE;
 
 /**
  * @author jinchan
@@ -38,6 +43,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Resource
     private UserMapper userMapper;
 
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
     /**
      * 盐值，混淆密码
      */
@@ -187,20 +194,50 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public boolean updateUser(User user, HttpServletRequest request) {
-        if(user == null || user.getId() == null){
+        if (user == null || user.getId() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User loginUser = (User)request.getSession().getAttribute(USER_LOGIN_STATE);
-        if(loginUser == null || loginUser.getId() == null){
+        User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (loginUser == null || loginUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        if(!(isAdmin(request)) || !Objects.equals(loginUser.getId(), user.getId())){
+        if (!(isAdmin(request)) || !Objects.equals(loginUser.getId(), user.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH);
         }
         return updateById(user);
     }
+
+    /**
+     * 推荐用户页面
+     *
+     * @param currentPage 当前页面数
+     * @return 页面对象
+     */
+    @Override
+    public Page<User> recommendUser(long currentPage) {
+        // 创建一个页面对象
+        Page page = new Page<>();
+
+        // 获取推荐用户的JSON字符串
+        String pageStr = stringRedisTemplate.opsForValue().get(RECOMMEND_KEY);
+
+        // 如果JSON字符串为空，则创建新的页面对象并存储到Redis中
+        if (Strings.isEmpty(pageStr)) {
+            page = this.page(new Page<>(currentPage, PAGE_SIZE));
+            stringRedisTemplate.opsForValue().set(RECOMMEND_KEY, JSONUtil.toJsonStr(page.getRecords()));
+        } else {
+            // 如果JSON字符串不为空，则将其转为页面对象
+            page = JSONUtil.toBean(pageStr, Page.class);
+        }
+
+        // 返回页面对象
+        return page;
+    }
+
+
     /**
      * 根据内存搜索用户
+     *
      * @param tagNameList 标签名列表
      * @return 用户列表
      */
