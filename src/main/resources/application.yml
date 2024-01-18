@@ -32,4 +32,4 @@ knife4j:
         group-name: test
         api-rule: package
         api-rule-resources:
-          - com.FitBuddy
+          - com.yijinchan
