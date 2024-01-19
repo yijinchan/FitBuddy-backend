@@ -23,7 +23,7 @@ public interface UserService extends IService<User> {
 
     List<User> searchUsersByTags(List<String> tagNameList);
 
-    boolean isAdmin(HttpServletRequest request);
+    boolean isAdmin(User loginUser);
 
     boolean updateUser(User user, HttpServletRequest request);
 

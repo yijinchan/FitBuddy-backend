@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.yijinchan.constant.UserConstants;
 import com.yijinchan.model.domain.User;
 import lombok.extern.slf4j.Slf4j;
 import com.yijinchan.common.ErrorCode;
@@ -185,10 +186,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return list(userLambdaQueryWrapper);
     }
 
+    /**
+     * 判断当前登录用户是否为管理员
+     *
+     * @param loginUser 当前登录用户
+     * @return 如果当前登录用户不为空且角色为管理员，则返回true；否则返回false
+     */
     @Override
-    public boolean isAdmin(HttpServletRequest request) {
-        User user = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
-        return user.getRole() == ADMIN_ROLE;
+    public boolean isAdmin(User loginUser) {
+        return loginUser != null && loginUser.getRole() == UserConstants.ADMIN_ROLE;
     }
 
 
@@ -201,7 +207,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (loginUser == null || loginUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        if (!(isAdmin(request)) || !Objects.equals(loginUser.getId(), user.getId())) {
+        if (!(isAdmin(loginUser)) || !Objects.equals(loginUser.getId(), user.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH);
         }
         return updateById(user);
@@ -236,6 +242,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 获取登录用户对象
+     *
      * @param request HTTP请求对象
      * @return 登录用户对象
      */
@@ -245,12 +252,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw null;
         }
         Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
-        if(userObj == null){
+        if (userObj == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
         return (User) userObj;
     }
-
 
 
     /**

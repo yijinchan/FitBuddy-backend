@@ -3,7 +3,13 @@ package com.yijinchan.service;
 import com.yijinchan.model.domain.Team;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yijinchan.model.domain.User;
+import com.yijinchan.model.dto.TeamQuery;
+import com.yijinchan.model.request.TeamJoinRequest;
+import com.yijinchan.model.request.TeamUpdateRequest;
+import com.yijinchan.model.vo.TeamUserVO;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
 * @author jinchan
@@ -14,4 +20,9 @@ public interface TeamService extends IService<Team> {
     @Transactional(rollbackFor = Exception.class)
     long addTeam(Team team, User loginUser);
 
+    List<TeamUserVO> listTeams(TeamQuery teamQuery, boolean isAdmin);
+
+    boolean updateTeam(TeamUpdateRequest teamUpdateRequest, User loginUser);
+
+    boolean joinTeam(TeamJoinRequest teamJoinRequest, User loginUser);
 }

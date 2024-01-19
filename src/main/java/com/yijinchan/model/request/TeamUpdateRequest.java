@@ -1,5 +1,7 @@
 package com.yijinchan.model.request;
 
+import lombok.Data;
+
 import java.io.Serializable;
 import java.util.Date;
 
@@ -11,10 +13,14 @@ import java.util.Date;
  * @Author yijinchan
  * @Create 2024/1/19 13:55
  */
+@Data
 public class TeamUpdateRequest implements Serializable {
 
     private static final long serialVersionUID = 4325254168263294566L;
-
+    /**
+     * ID的私有变量，存储ID信息
+     */
+    private long id;
     /**
      * 名称的私有变量，存储名称信息
      */
