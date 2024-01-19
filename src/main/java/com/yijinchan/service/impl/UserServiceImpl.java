@@ -234,6 +234,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return page;
     }
 
+    /**
+     * 获取登录用户对象
+     * @param request HTTP请求对象
+     * @return 登录用户对象
+     */
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        if (request == null) {
+            throw null;
+        }
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        if(userObj == null){
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        return (User) userObj;
+    }
+
+
 
     /**
      * 根据内存搜索用户

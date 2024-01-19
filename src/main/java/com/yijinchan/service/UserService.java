@@ -28,4 +28,6 @@ public interface UserService extends IService<User> {
     boolean updateUser(User user, HttpServletRequest request);
 
     Page<User> recommendUser(long currentPage);
+
+    User getLoginUser(HttpServletRequest request);
 }
