@@ -48,7 +48,6 @@ public class JacksonObjectMapper extends ObjectMapper {
                 .addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT)))
                 // 添加一个LocalTime类的反序列化器，并指定时间格式
                 .addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(DEFAULT_TIME_FORMAT)))
-
                 // 添加一个BigInteger类的序列化器为ToStringSerializer.instance
                 .addSerializer(BigInteger.class, ToStringSerializer.instance)
                 // 添加一个Long类的序列化器为ToStringSerializer.instance
@@ -59,8 +58,6 @@ public class JacksonObjectMapper extends ObjectMapper {
                 .addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT)))
                 // 添加一个LocalTime类的序列化器，并指定时间格式
                 .addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern(DEFAULT_TIME_FORMAT)));
-
-
         //注册功能模块 例如，可以添加自定义序列化器和反序列化器
         this.registerModule(simpleModule);
     }

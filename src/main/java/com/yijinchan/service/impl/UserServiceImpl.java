@@ -221,24 +221,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      */
     @Override
     public Page<User> recommendUser(long currentPage) {
-        // 创建一个页面对象
-        Page page = new Page<>();
-
-        // 获取推荐用户的JSON字符串
+        Page<User> page = new Page<>();
         String pageStr = stringRedisTemplate.opsForValue().get(RECOMMEND_KEY);
-
-        // 如果JSON字符串为空，则创建新的页面对象并存储到Redis中
         if (Strings.isEmpty(pageStr)) {
             page = this.page(new Page<>(currentPage, PAGE_SIZE));
-            stringRedisTemplate.opsForValue().set(RECOMMEND_KEY, JSONUtil.toJsonStr(page.getRecords()));
-        } else {
-            // 如果JSON字符串不为空，则将其转为页面对象
-            page = JSONUtil.toBean(pageStr, Page.class);
+            stringRedisTemplate.opsForValue().set(RECOMMEND_KEY, JSONUtil.toJsonStr(page));
+            return page;
         }
-
-        // 返回页面对象
+        page = JSONUtil.toBean(pageStr, Page.class);
         return page;
     }
+
 
     /**
      * 获取登录用户对象
