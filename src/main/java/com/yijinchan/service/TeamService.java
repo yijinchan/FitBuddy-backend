@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.yijinchan.model.domain.User;
 import com.yijinchan.model.dto.TeamQuery;
 import com.yijinchan.model.request.TeamJoinRequest;
+import com.yijinchan.model.request.TeamQuitRequest;
 import com.yijinchan.model.request.TeamUpdateRequest;
 import com.yijinchan.model.vo.TeamUserVO;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,4 +26,8 @@ public interface TeamService extends IService<Team> {
     boolean updateTeam(TeamUpdateRequest teamUpdateRequest, User loginUser);
 
     boolean joinTeam(TeamJoinRequest teamJoinRequest, User loginUser);
+    @Transactional(rollbackFor = Exception.class)
+    boolean quitTeam(TeamQuitRequest teamQuitRequest, User loginUser);
+
+    boolean deleteTeam(long id, User loginUser);
 }

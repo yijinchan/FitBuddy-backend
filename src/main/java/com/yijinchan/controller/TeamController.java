@@ -8,13 +8,12 @@ import com.yijinchan.exception.BusinessException;
 import com.yijinchan.model.domain.Team;
 import com.yijinchan.model.domain.User;
 import com.yijinchan.model.dto.TeamQuery;
-import com.yijinchan.model.request.TeamAddRequest;
-import com.yijinchan.model.request.TeamJoinRequest;
-import com.yijinchan.model.request.TeamUpdateRequest;
+import com.yijinchan.model.request.*;
 import com.yijinchan.model.vo.TeamUserVO;
 import com.yijinchan.service.TeamService;
 import com.yijinchan.service.UserService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.annotations.Delete;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -102,5 +101,27 @@ public class TeamController {
         User loginUser = userService.getLoginUser(request);
         boolean result = teamService.joinTeam(teamJoinRequest, loginUser);
         return ResultUtils.success(result);
+    }
+    @PostMapping("/quit")
+    public BaseResponse<Boolean> quitTeam(@RequestBody TeamQuitRequest teamQuitRequest, HttpServletRequest request) {
+        if (teamQuitRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        boolean result = teamService.quitTeam(teamQuitRequest, loginUser);
+        return ResultUtils.success(result);
+    }
+    @PostMapping("/delete")
+    public BaseResponse<Boolean> deleteTeam(@RequestBody DeleteRequest teamDeleteRequest, HttpServletRequest request) {
+        if (teamDeleteRequest == null || teamDeleteRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        long id = teamDeleteRequest.getId();
+        User loginUser = userService.getLoginUser(request);
+        boolean result = teamService.deleteTeam(id, loginUser);
+        if (!result) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除失败");
+        }
+        return ResultUtils.success(true);
     }
 }
