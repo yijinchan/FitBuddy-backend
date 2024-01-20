@@ -3,7 +3,7 @@ package com.yijinchan.service;
 import com.yijinchan.model.domain.Team;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yijinchan.model.domain.User;
-import com.yijinchan.model.dto.TeamQuery;
+import com.yijinchan.model.request.TeamQueryRequest;
 import com.yijinchan.model.request.TeamJoinRequest;
 import com.yijinchan.model.request.TeamQuitRequest;
 import com.yijinchan.model.request.TeamUpdateRequest;
@@ -21,7 +21,7 @@ public interface TeamService extends IService<Team> {
     @Transactional(rollbackFor = Exception.class)
     long addTeam(Team team, User loginUser);
 
-    List<TeamUserVO> listTeams(TeamQuery teamQuery, boolean isAdmin);
+    List<TeamUserVO> listTeams(TeamQueryRequest teamQueryRequest, boolean isAdmin);
 
     boolean updateTeam(TeamUpdateRequest teamUpdateRequest, User loginUser);
 

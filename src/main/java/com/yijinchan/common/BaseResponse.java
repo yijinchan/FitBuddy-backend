@@ -1,16 +1,18 @@
 package com.yijinchan.common;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.io.Serializable;
 @Data
 public class BaseResponse<T> implements Serializable {
+    @ApiModelProperty(value = "返回码")
     private int code;
-
+    @ApiModelProperty(value = "返回数据")
     private T data;
-
+    @ApiModelProperty(value = "返回信息")
     private String message;
-
+    @ApiModelProperty(value = "返回描述")
     private String description;
 
     public BaseResponse(int code, T data, String message, String description) {

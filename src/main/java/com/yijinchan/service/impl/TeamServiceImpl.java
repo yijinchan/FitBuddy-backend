@@ -7,9 +7,9 @@ import com.yijinchan.exception.BusinessException;
 import com.yijinchan.model.domain.Team;
 import com.yijinchan.model.domain.User;
 import com.yijinchan.model.domain.UserTeam;
-import com.yijinchan.model.dto.TeamQuery;
 import com.yijinchan.model.enums.TeamStatusEnum;
 import com.yijinchan.model.request.TeamJoinRequest;
+import com.yijinchan.model.request.TeamQueryRequest;
 import com.yijinchan.model.request.TeamQuitRequest;
 import com.yijinchan.model.request.TeamUpdateRequest;
 import com.yijinchan.model.vo.TeamUserVO;
@@ -25,10 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author jinchan
@@ -36,8 +33,7 @@ import java.util.Optional;
  * @createDate 2024-01-18 20:53:25
  */
 @Service
-public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
-        implements TeamService {
+public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements TeamService {
     @Resource
     private UserTeamService userTeamService;
     @Resource
@@ -54,6 +50,12 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(team.getExpireTime());
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        team.setExpireTime(calendar.getTime());
         final long userId = loginUser.getId();
         //3.校验信息
         QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
@@ -149,7 +151,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
      * @return 查询到的团队用户VO列表
      */
     @Override
-    public List<TeamUserVO> listTeams(TeamQuery teamQuery, boolean isAdmin) {
+    public List<TeamUserVO> listTeams(TeamQueryRequest teamQuery, boolean isAdmin) {
         QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
         if (teamQuery != null) {
             Long id = teamQuery.getId();

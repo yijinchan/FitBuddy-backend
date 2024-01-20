@@ -2,6 +2,9 @@ server:
   port: 8080
   servlet:
     context-path: /api
+    session:
+      cookie:
+        domain: localhost
 spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
@@ -11,6 +14,11 @@ spring:
   redis:
     host: localhost
     port: 6379
+  session:
+    store-type: redis
+  jackson:
+    time-zone: GMT+8
+    date-format: java.text.SimpleDateFormat
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: on
