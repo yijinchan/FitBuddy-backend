@@ -240,4 +240,17 @@ public class UserController {
         Page<User> userPage = userService.recommendUser(currentPage);
         return ResultUtils.success(userPage);
     }
+
+    @GetMapping("/match")
+    @ApiOperation(value = "获取最匹配的n个用户")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "num", value = "查询个数"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
+    public BaseResponse<List<User>> matchUsers(@RequestParam(required = false) long num, HttpServletRequest request) {
+        if(num <= 0 || num > 20){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User user = userService.getLoginUser(request);
+        return ResultUtils.success(userService.matchUsers(user, num));
+    }
 }
