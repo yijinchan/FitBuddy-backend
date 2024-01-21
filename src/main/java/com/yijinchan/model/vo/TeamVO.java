@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * ClassName: TeamUserVo
+ * ClassName: TeamVO
  * Package: com.yijinchan.model.vo
  * Description:
  *
@@ -17,7 +17,7 @@ import java.util.Date;
  */
 @Data
 @ApiModel(value = "队伍用户返回")
-public class TeamUserVO implements Serializable {
+public class TeamVO implements Serializable {
     private static final long serialVersionUID = 2625797734453117209L;
 
     /**
@@ -84,7 +84,7 @@ public class TeamUserVO implements Serializable {
      * 已加入的用户数
      */
     @ApiModelProperty(value = "已加入的用户数")
-    private Integer hasJoinNum;
+    private Long hasJoinNum;
 
     /**
      * 是否已加入队伍

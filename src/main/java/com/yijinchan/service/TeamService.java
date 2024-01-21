@@ -7,7 +7,7 @@ import com.yijinchan.model.request.TeamQueryRequest;
 import com.yijinchan.model.request.TeamJoinRequest;
 import com.yijinchan.model.request.TeamQuitRequest;
 import com.yijinchan.model.request.TeamUpdateRequest;
-import com.yijinchan.model.vo.TeamUserVO;
+import com.yijinchan.model.vo.TeamVO;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -21,7 +21,7 @@ public interface TeamService extends IService<Team> {
     @Transactional(rollbackFor = Exception.class)
     long addTeam(Team team, User loginUser);
 
-    List<TeamUserVO> listTeams(TeamQueryRequest teamQueryRequest, boolean isAdmin);
+    List<TeamVO> listTeams(TeamQueryRequest teamQueryRequest, boolean isAdmin);
 
     boolean updateTeam(TeamUpdateRequest teamUpdateRequest, User loginUser);
 

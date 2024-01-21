@@ -9,5 +9,4 @@ class FitBuddyBackendApplicationTests {
     @Test
     void contextLoads() {
     }
-
 }

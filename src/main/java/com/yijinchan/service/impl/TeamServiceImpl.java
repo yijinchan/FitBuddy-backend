@@ -12,7 +12,7 @@ import com.yijinchan.model.request.TeamJoinRequest;
 import com.yijinchan.model.request.TeamQueryRequest;
 import com.yijinchan.model.request.TeamQuitRequest;
 import com.yijinchan.model.request.TeamUpdateRequest;
-import com.yijinchan.model.vo.TeamUserVO;
+import com.yijinchan.model.vo.TeamVO;
 import com.yijinchan.model.vo.UserVO;
 import com.yijinchan.service.TeamService;
 import com.yijinchan.mapper.TeamMapper;
@@ -151,7 +151,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
      * @return 查询到的团队用户VO列表
      */
     @Override
-    public List<TeamUserVO> listTeams(TeamQueryRequest teamQuery, boolean isAdmin) {
+    public List<TeamVO> listTeams(TeamQueryRequest teamQuery, boolean isAdmin) {
         QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
         if (teamQuery != null) {
             Long id = teamQuery.getId();
@@ -197,23 +197,23 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
         if (CollectionUtils.isEmpty(teamList)) {
             return new ArrayList<>(); // 返回空列表
         }
-        List<TeamUserVO> teamUserVOList = new ArrayList<>(); // 团队用户VO列表
+        List<TeamVO> teamVOList = new ArrayList<>(); // 团队用户VO列表
         for (Team team : teamList) {
             Long userId = team.getUserId();
             if (userId == null) {
                 continue; // 团队用户id为空则跳过
             }
             User user = userService.getById(userId); // 根据用户id查询用户
-            TeamUserVO teamUserVO = new TeamUserVO(); // 团队用户VO
-            BeanUtils.copyProperties(team, teamUserVO); // 复制团队信息到团队用户VO
+            TeamVO teamVO = new TeamVO(); // 团队用户VO
+            BeanUtils.copyProperties(team, teamVO); // 复制团队信息到团队用户VO
             if (user != null) {
                 UserVO userVO = new UserVO(); // 用户VO
                 BeanUtils.copyProperties(user, userVO); // 复制用户信息到用户VO
-                teamUserVO.setCreateUser(userVO); // 设置创建用户
+                teamVO.setCreateUser(userVO); // 设置创建用户
             }
-            teamUserVOList.add(teamUserVO); // 添加团队用户VO到列表
+            teamVOList.add(teamVO); // 添加团队用户VO到列表
         }
-        return teamUserVOList; // 返回团队用户VO列表
+        return teamVOList; // 返回团队用户VO列表
     }
 
     public boolean joinTeam(TeamJoinRequest teamJoinRequest, User loginUser) {
