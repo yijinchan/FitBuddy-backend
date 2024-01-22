@@ -1,5 +1,6 @@
 package com.yijinchan.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yijinchan.model.domain.Team;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yijinchan.model.domain.User;
@@ -21,7 +22,7 @@ public interface TeamService extends IService<Team> {
     @Transactional(rollbackFor = Exception.class)
     long addTeam(Team team, User loginUser);
 
-    List<TeamVO> listTeams(TeamQueryRequest teamQueryRequest, boolean isAdmin);
+    Page<TeamVO> listTeams(long currentPage, TeamQueryRequest teamQuery, boolean isAdmin);
 
     boolean updateTeam(TeamUpdateRequest teamUpdateRequest, User loginUser);
 

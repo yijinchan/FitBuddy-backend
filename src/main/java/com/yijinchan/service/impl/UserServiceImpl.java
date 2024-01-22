@@ -257,8 +257,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @param currentPage 当前页面数
      * @return 页面对象
      */
-    @Override
-    public Page<User> recommendUser(long currentPage) {
+    public Page<User> userPage(long currentPage) {
         return this.page(new Page<>(currentPage, PAGE_SIZE));
     }
 
@@ -280,81 +279,153 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         return (User) userObj;
     }
+    public Boolean isLogin(HttpServletRequest request){
+        if (request==null){
+            return false;
+        }
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (userObj == null) {
+            return false;
+        }
+        return true;
+    }
 
     /**
      * 匹配用户
      * @param loginUser 登录用户
-     * @param num 匹配用户数量
      * @return 匹配到的用户列表
      */
+//    @Override
+//    public List<User> matchUsers(User loginUser, long num) {
+//        // 创建查询条件包装器
+//        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+//        // 选择id和tags字段
+//        queryWrapper.select("id", "tags");
+//        // 筛选tags不为空的记录
+//        queryWrapper.isNotNull("tags");
+//        // 查询用户列表
+//        List<User> userList = this.list(queryWrapper);
+//
+//        // 获取登录用户的tags
+//        String tags = loginUser.getTags();
+//        // 创建Gson对象
+//        Gson gson = new Gson();
+//        // 将tags字符串转换为List<String>对象
+//        List<String> tagList = gson.fromJson(tags, new TypeToken<List<String>>() {
+//        }.getType());
+//
+//        // 定义用户列表的下标 => 相似度列表
+//        List<Pair<User, Long>> list = new ArrayList<>();
+//
+//        // 依次计算所有用户和当前用户的相似度
+//        for (int i = 0; i < userList.size(); i++) {
+//            // 获取当前用户
+//            User user = userList.get(i);
+//            // 获取当前用户的tags
+//            String userTags = user.getTags();
+//
+//            // 无标签或者为当前用户自己
+//            if (StringUtils.isBlank(userTags) || Objects.equals(user.getId(), loginUser.getId())) {
+//                continue;
+//            }
+//
+//            // 将当前用户的tags字符串转换为List<String>对象
+//            List<String> userTagList = gson.fromJson(userTags, new TypeToken<List<String>>() {
+//            }.getType());
+//
+//            // 计算分数
+//            long distance = AlgorithmUtil.minDistance(tagList, userTagList);
+//            // 添加到相似度列表
+//            list.add(new Pair<>(user, distance));
+//        }
+//
+//        // 按编辑距离由小到大排序
+//        List<Pair<User, Long>> topUserPairList = list.stream()
+//                .sorted((a, b) -> (int) (a.getValue() - b.getValue()))
+//                .limit(num)
+//                .collect(Collectors.toList());
+//
+//        // 获取排序后的用户id列表
+//        List<Long> userIdList = topUserPairList.stream().map(pair -> pair.getKey().getId()).collect(Collectors.toList());
+//
+//        // 构建in查询的字段列表
+//        String idStr = StringUtils.join(userIdList, ",");
+//
+//        // 创建查询条件包装器，查询匹配的用户
+//        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+//        userQueryWrapper.in("id", userIdList).last("ORDER BY FIELD(id,"+idStr+")");
+//
+//        // 查询并返回匹配到的用户列表
+//        return this.list(userQueryWrapper)
+//                .stream()
+//                .map(this::getSafetyUser)
+//                .collect(Collectors.toList());
+//    }
+//
     @Override
-    public List<User> matchUsers(User loginUser, long num) {
-        // 创建查询条件包装器
+    public Page<User> matchUser(long currentPage, User loginUser) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        // 选择id和tags字段
         queryWrapper.select("id", "tags");
-        // 筛选tags不为空的记录
         queryWrapper.isNotNull("tags");
-        // 查询用户列表
         List<User> userList = this.list(queryWrapper);
-
-        // 获取登录用户的tags
         String tags = loginUser.getTags();
-        // 创建Gson对象
         Gson gson = new Gson();
-        // 将tags字符串转换为List<String>对象
         List<String> tagList = gson.fromJson(tags, new TypeToken<List<String>>() {
         }.getType());
-
-        // 定义用户列表的下标 => 相似度列表
+        // 用户列表的下标 => 相似度
         List<Pair<User, Long>> list = new ArrayList<>();
-
         // 依次计算所有用户和当前用户的相似度
         for (int i = 0; i < userList.size(); i++) {
-            // 获取当前用户
             User user = userList.get(i);
-            // 获取当前用户的tags
             String userTags = user.getTags();
-
             // 无标签或者为当前用户自己
             if (StringUtils.isBlank(userTags) || Objects.equals(user.getId(), loginUser.getId())) {
                 continue;
             }
-
-            // 将当前用户的tags字符串转换为List<String>对象
             List<String> userTagList = gson.fromJson(userTags, new TypeToken<List<String>>() {
             }.getType());
-
             // 计算分数
             long distance = AlgorithmUtil.minDistance(tagList, userTagList);
-            // 添加到相似度列表
             list.add(new Pair<>(user, distance));
         }
-
         // 按编辑距离由小到大排序
         List<Pair<User, Long>> topUserPairList = list.stream()
                 .sorted((a, b) -> (int) (a.getValue() - b.getValue()))
-                .limit(num)
                 .collect(Collectors.toList());
-
-        // 获取排序后的用户id列表
-        List<Long> userIdList = topUserPairList.stream().map(pair -> pair.getKey().getId()).collect(Collectors.toList());
-
-        // 构建in查询的字段列表
+        //截取currentPage所需的List
+        ArrayList<Pair<User, Long>> finalUserPairList = new ArrayList<>();
+        int begin = (int) ((currentPage - 1) * PAGE_SIZE);
+        int end = (int) (((currentPage - 1) * PAGE_SIZE) + PAGE_SIZE) - 1;
+        if (topUserPairList.size() < end) {
+            //剩余数量
+            int temp = (int) (topUserPairList.size() - begin);
+            if (temp <= 0) {
+                return new Page<>();
+            }
+            for (int i = begin; i <= begin + temp - 1; i++) {
+                finalUserPairList.add(topUserPairList.get(i));
+            }
+        } else {
+            for (int i = begin; i <= end; i++) {
+                finalUserPairList.add(topUserPairList.get(i));
+            }
+        }
+        //获取排列后的UserId
+        List<Long> userIdList = finalUserPairList.stream().map(pair -> pair.getKey().getId()).collect(Collectors.toList());
         String idStr = StringUtils.join(userIdList, ",");
-
-        // 创建查询条件包装器，查询匹配的用户
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.in("id", userIdList).last("ORDER BY FIELD(id,"+idStr+")");
-
-        // 查询并返回匹配到的用户列表
-        return this.list(userQueryWrapper)
+        userQueryWrapper.in("id", userIdList).last("ORDER BY FIELD(id," + idStr + ")");
+        List<User> records = this.list(userQueryWrapper)
                 .stream()
                 .map(this::getSafetyUser)
                 .collect(Collectors.toList());
+        Page<User> userPage = new Page<>();
+        userPage.setRecords(records);
+        userPage.setCurrent(currentPage);
+        userPage.setSize(records.size());
+        userPage.setTotal(userList.size());
+        return userPage;
     }
-
-
 
     /**
      * 根据内存搜索用户

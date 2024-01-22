@@ -50,8 +50,18 @@ public class UserController {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    /**
+     * 短信发送
+     * @param phone 手机号
+     * @return 发送结果
+     */
     @GetMapping("/message")
+    @ApiOperation(value = "短信发送")
+    @ApiImplicitParams(
+            @ApiImplicitParam(name = "phone", value = "手机号")
+    )
     public BaseResponse sendMessage(String phone) {
+        //todo SMS服务
         if (StringUtils.isBlank(phone)) {
             return ResultUtils.error(ErrorCode.PARAMS_ERROR);
         }
@@ -61,6 +71,7 @@ public class UserController {
         System.out.println(code);
         return ResultUtils.success("短信发送成功");
     }
+
     /**
      * 用户注册
      * 接收用户注册请求参数，将用户注册信息保存到数据库
@@ -254,24 +265,37 @@ public class UserController {
      * @param currentPage 当前页
      * @return 返回用户推荐信息
      */
-    @GetMapping("/recommend")
-    @ApiOperation(value = "用户推荐")
+    @GetMapping("/page")
+    @ApiOperation(value = "用户分页")
     @ApiImplicitParams({@ApiImplicitParam(name = "currentPage", value = "当前页")})
-    public BaseResponse<Page<User>> recommendUser(long currentPage) {
-        Page<User> userPage = userService.recommendUser(currentPage);
+    public BaseResponse<Page<User>> userPagination(long currentPage) {
+        Page<User> userPage = userService.userPage(currentPage);
         return ResultUtils.success(userPage);
     }
 
+    /**
+     * 获取匹配用户
+     * @param currentPage 当前页
+     * @param request 请求对象
+     * @return 匹配用户的响应结果
+     */
     @GetMapping("/match")
-    @ApiOperation(value = "获取最匹配的n个用户")
+    @ApiOperation(value = "获取匹配用户")
     @ApiImplicitParams(
-            {@ApiImplicitParam(name = "num", value = "查询个数"),
+            {@ApiImplicitParam(name = "currentPage", value = "当前页"),
                     @ApiImplicitParam(name = "request", value = "request请求")})
-    public BaseResponse<List<User>> matchUsers(@RequestParam(required = false) long num, HttpServletRequest request) {
-        if(num <= 0 || num > 20){
+    public BaseResponse<Page<User>> matchUsers(long currentPage, HttpServletRequest request) {
+        if (currentPage <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User user = userService.getLoginUser(request);
-        return ResultUtils.success(userService.matchUsers(user, num));
+        Boolean isLogin = userService.isLogin(request);
+        if (isLogin){
+            User user = userService.getLoginUser(request);
+            return ResultUtils.success(userService.matchUser(currentPage, user));
+        }else {
+            //todo 未登录时随机查询
+            return ResultUtils.success(userService.userPage(currentPage));
+        }
     }
+
 }

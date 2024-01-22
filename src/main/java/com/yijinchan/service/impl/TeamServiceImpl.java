@@ -1,6 +1,7 @@
 package com.yijinchan.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yijinchan.common.ErrorCode;
 import com.yijinchan.exception.BusinessException;
@@ -26,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.*;
+
+import static com.yijinchan.constant.SystemConstants.PAGE_SIZE;
 
 /**
  * @author jinchan
@@ -151,7 +154,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
      * @return 查询到的团队用户VO列表
      */
     @Override
-    public List<TeamVO> listTeams(TeamQueryRequest teamQuery, boolean isAdmin) {
+    public Page<TeamVO> listTeams(long currentPage, TeamQueryRequest teamQuery, boolean isAdmin) {
         QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
         if (teamQuery != null) {
             Long id = teamQuery.getId();
@@ -193,27 +196,31 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
             queryWrapper.eq("status", statusEnum.getValue()); // 根据状态查询
         }
         queryWrapper.and(qw -> qw.gt("expire_time", new Date()).or().isNull("expireTime")); // 根据过期时间和过期状态查询
-        List<Team> teamList = this.list(queryWrapper); // 查询团队列表
-        if (CollectionUtils.isEmpty(teamList)) {
-            return new ArrayList<>(); // 返回空列表
+        Page<Team> teamPage = this.page(new Page<>(currentPage, PAGE_SIZE),queryWrapper);
+        if (CollectionUtils.isEmpty(teamPage.getRecords())) {
+            return new Page<>();
         }
-        List<TeamVO> teamVOList = new ArrayList<>(); // 团队用户VO列表
-        for (Team team : teamList) {
+        Page<TeamVO> teamVOPage = new Page<>();
+        BeanUtils.copyProperties(teamPage,teamVOPage,"records");
+        List<Team> teamPageRecords = teamPage.getRecords();
+        ArrayList<TeamVO> teamUserVOList = new ArrayList<>();
+        for (Team team : teamPageRecords) {
             Long userId = team.getUserId();
             if (userId == null) {
                 continue; // 团队用户id为空则跳过
             }
             User user = userService.getById(userId); // 根据用户id查询用户
-            TeamVO teamVO = new TeamVO(); // 团队用户VO
-            BeanUtils.copyProperties(team, teamVO); // 复制团队信息到团队用户VO
+            TeamVO teamUserVO = new TeamVO(); // 团队用户VO
+            BeanUtils.copyProperties(team, teamUserVO); // 复制团队信息到团队用户VO
             if (user != null) {
                 UserVO userVO = new UserVO(); // 用户VO
                 BeanUtils.copyProperties(user, userVO); // 复制用户信息到用户VO
-                teamVO.setCreateUser(userVO); // 设置创建用户
+                teamUserVO.setCreateUser(userVO); // 设置创建用户
             }
-            teamVOList.add(teamVO); // 添加团队用户VO到列表
+            teamUserVOList.add(teamUserVO); // 添加团队用户VO到列表
         }
-        return teamVOList; // 返回团队用户VO列表
+        teamVOPage.setRecords(teamUserVOList);
+        return teamVOPage;
     }
 
     public boolean joinTeam(TeamJoinRequest teamJoinRequest, User loginUser) {

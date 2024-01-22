@@ -27,7 +27,7 @@ CREATE TABLE `team`  (
                          `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                          `is_delete` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否删除',
                          PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '队伍' ROW_FORMAT = Compact;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '队伍' ROW_FORMAT = Compact;
 
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user`  (
@@ -48,7 +48,7 @@ CREATE TABLE `user`  (
                          `is_delete` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否删除',
                          PRIMARY KEY (`id`) USING BTREE,
                          UNIQUE INDEX `uniIdx_account`(`user_account`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1002 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
 DROP TABLE IF EXISTS `user_team`;
 CREATE TABLE `user_team`  (
@@ -60,4 +60,4 @@ CREATE TABLE `user_team`  (
                               `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                               `is_delete` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否删除',
                               PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1660155381467557891 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户队伍关系' ROW_FORMAT = Compact;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '用户队伍关系' ROW_FORMAT = Compact;
