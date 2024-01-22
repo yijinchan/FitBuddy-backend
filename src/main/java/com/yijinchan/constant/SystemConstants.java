@@ -10,4 +10,6 @@ package com.yijinchan.constant;
  */
 public interface SystemConstants {
     public static final long PAGE_SIZE = 8;
+    //todo 需要申请域名
+    String QiNiuUrl = "http://s7nuwa89c.hn-bkt.clouddn.com/";
 }
