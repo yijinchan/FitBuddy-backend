@@ -212,7 +212,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @return
      */
     @Override
-    public List<User> searchUsersByTags(List<String> tagNameList) {
+    public Page<User> searchUsersByTags(List<String> tagNameList,long currentPage) {
         if (CollectionUtils.isEmpty(tagNameList)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -220,7 +220,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         for (String tagName : tagNameList) {
             userLambdaQueryWrapper = userLambdaQueryWrapper.or().like(Strings.isNotEmpty(tagName), User::getTags, tagName);
         }
-        return list(userLambdaQueryWrapper);
+        return page(new Page<>(currentPage,PAGE_SIZE),userLambdaQueryWrapper);
     }
 
     /**
@@ -244,6 +244,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (loginUser == null || loginUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
+        user.setId(loginUser.getId());
         if (!(isAdmin(loginUser)) || !Objects.equals(loginUser.getId(), user.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH);
         }
@@ -258,15 +259,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      */
     @Override
     public Page<User> recommendUser(long currentPage) {
-        Page<User> page = new Page<>();
-        String pageStr = stringRedisTemplate.opsForValue().get(RECOMMEND_KEY);
-        if (Strings.isEmpty(pageStr)) {
-            page = this.page(new Page<>(currentPage, PAGE_SIZE));
-            stringRedisTemplate.opsForValue().set(RECOMMEND_KEY, JSONUtil.toJsonStr(page));
-            return page;
-        }
-        page = JSONUtil.toBean(pageStr, Page.class);
-        return page;
+        return this.page(new Page<>(currentPage, PAGE_SIZE));
     }
 
 
@@ -290,9 +283,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 匹配用户
-     *
      * @param loginUser 登录用户
-     * @param num       匹配用户数量
+     * @param num 匹配用户数量
      * @return 匹配到的用户列表
      */
     @Override
@@ -353,7 +345,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         // 创建查询条件包装器，查询匹配的用户
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.in("id", userIdList).last("ORDER BY FIELD(id," + idStr + ")");
+        userQueryWrapper.in("id", userIdList).last("ORDER BY FIELD(id,"+idStr+")");
 
         // 查询并返回匹配到的用户列表
         return this.list(userQueryWrapper)
@@ -361,6 +353,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .map(this::getSafetyUser)
                 .collect(Collectors.toList());
     }
+
 
 
     /**

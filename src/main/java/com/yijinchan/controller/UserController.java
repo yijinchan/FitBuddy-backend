@@ -9,6 +9,7 @@ import com.yijinchan.exception.BusinessException;
 import com.yijinchan.model.domain.User;
 import com.yijinchan.model.request.UserLoginRequest;
 import com.yijinchan.model.request.UserRegisterRequest;
+import com.yijinchan.model.request.UserUpdateRequest;
 import com.yijinchan.service.UserService;
 import com.yijinchan.utils.ValidateCodeUtils;
 import io.swagger.annotations.Api;
@@ -17,6 +18,7 @@ import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
@@ -162,11 +164,11 @@ public class UserController {
     @GetMapping("/search/tags")
     @ApiOperation(value = "通过标签搜索用户")
     @ApiImplicitParams({@ApiImplicitParam(name = "tagNameList", value = "标签列表")})
-    public BaseResponse<List<User>> searchUsersByTags(@RequestParam(required = false) List<String> tagNameList) {
+    public BaseResponse<Page<User>> searchUsersByTags(@RequestParam(required = false) List<String> tagNameList,long currentPage) {
         if (CollectionUtils.isEmpty(tagNameList)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        List<User> userList = userService.searchUsersByTags(tagNameList);
+        Page<User> userList = userService.searchUsersByTags(tagNameList,currentPage);
         return ResultUtils.success(userList);
     }
 
@@ -199,7 +201,7 @@ public class UserController {
     /**
      * 更新用户
      *
-     * @param user    用户更新请求参数
+     * @param   updateRequest updateReques
      * @param request request请求
      * @return 更新成功返回1，更新失败抛出BusinessException
      */
@@ -208,13 +210,15 @@ public class UserController {
     @ApiImplicitParams(
             {@ApiImplicitParam(name = "user", value = "用户更新请求参数"),
                     @ApiImplicitParam(name = "request", value = "request请求")})
-    public BaseResponse<Integer> updateUser(@RequestBody User user, HttpServletRequest request) {
-        if (user == null || request == null) {
+    public BaseResponse<String> updateUser(@RequestBody UserUpdateRequest updateRequest, HttpServletRequest request) {
+        if (updateRequest == null || request == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+        User user = new User();
+        BeanUtils.copyProperties(updateRequest, user);
         boolean flag = userService.updateUser(user, request);
         if (flag) {
-            return ResultUtils.success(1);
+            return ResultUtils.success("用户更新成功");
         } else {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
