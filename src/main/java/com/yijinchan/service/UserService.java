@@ -13,7 +13,7 @@ import java.util.List;
 * @description 针对表【user】的数据库操作Service
 */
 public interface UserService extends IService<User> {
-    long userRegister(String userAccount, String userPassword, String checkPassword);
+    long userRegister(String phone, String code,String userAccount, String userPassword, String checkPassword);
 
     User userLogin(String userAccount, String userPassword, HttpServletRequest request);
 

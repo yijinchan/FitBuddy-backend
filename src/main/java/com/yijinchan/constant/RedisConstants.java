@@ -8,6 +8,8 @@ package com.yijinchan.constant;
  * @Author yijinchan
  * @Create 2024/1/18 19:52
  */
-public class RedisConstants {
-    public static final String RECOMMEND_KEY = "FitBuddy:user:recommend";
+public interface RedisConstants {
+    String RECOMMEND_KEY = "FitBuddy:user:recommend";
+    String REGISTER_CODE_KEY = "FitBuddy:register:";
+    Long REGISTER_CODE_TTL = 15L;
 }

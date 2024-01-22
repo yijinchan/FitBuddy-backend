@@ -10,6 +10,14 @@ import java.io.Serializable;
 @ApiModel(value = "用户注册请求参数")
 public class UserRegisterRequest implements Serializable {
     private static final long serialVersionUID = 3191241716373120793L;
+
+    @ApiModelProperty(value = "手机号")
+    private String phone;
+
+    @ApiModelProperty(value = "验证码")
+    private String code;
+
+
     @ApiModelProperty(value = "账号")
     private String userAccount;
 

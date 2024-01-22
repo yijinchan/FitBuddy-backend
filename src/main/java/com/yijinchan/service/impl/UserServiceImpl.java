@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.yijinchan.constant.RedisConstants.RECOMMEND_KEY;
+import static com.yijinchan.constant.RedisConstants.REGISTER_CODE_KEY;
 import static com.yijinchan.constant.SystemConstants.PAGE_SIZE;
 import static com.yijinchan.constant.UserConstants.ADMIN_ROLE;
 import static com.yijinchan.constant.UserConstants.USER_LOGIN_STATE;
@@ -44,6 +45,17 @@ import static com.yijinchan.constant.UserConstants.USER_LOGIN_STATE;
 @Service
 @Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+    private static final String[] avatarUrls = {
+            "https://tse2-mm.cn.bing.net/th/id/OIP-C.qndqxQYjrVB5oqOxxUcNkwHaLH?w=202&h=303&c=7&r=0&o=5&dpr=1.1&pid=1.7",
+            "https://tse2-mm.cn.bing.net/th/id/OIP-C.UUZdwkH1qIpVhJGnsMVG7gHaL5?w=197&h=316&c=7&r=0&o=5&dpr=1.1&pid=1.7",
+            "https://tse1-mm.cn.bing.net/th/id/OIP-C.s49bKLBiOmAgzP7pvTeSWgHaLH?w=202&h=303&c=7&r=0&o=5&dpr=1.1&pid=1.7",
+            "https://tse1-mm.cn.bing.net/th/id/OIP-C.vOM5M-mcgvOzGBCgJ9q-tQHaKh?w=202&h=288&c=7&r=0&o=5&dpr=1.1&pid=1.7",
+            "https://tse3-mm.cn.bing.net/th/id/OIP-C.fj-p2dTyxXeh6htPkR7GlgHaLH?w=202&h=303&c=7&r=0&o=5&dpr=1.1&pid=1.7",
+            "https://tse1-mm.cn.bing.net/th/id/OIP-C.QZczyduQNUPSgodMasUlXgHaJO?w=202&h=251&c=7&r=0&o=5&dpr=1.1&pid=1.7",
+            "https://tse2-mm.cn.bing.net/th/id/OIP-C.FR2JTWQ5bo_XKNXwXwfQPgHaLH?w=202&h=303&c=7&r=0&o=5&dpr=1.1&pid=1.7",
+            "https://tse3-mm.cn.bing.net/th/id/OIP-C.mpyjffkxslgPodE-emib0gHaJQ?w=202&h=253&c=7&r=0&o=5&dpr=1.1&pid=1.7",
+            "https://tse4-mm.cn.bing.net/th/id/OIP-C.sEV-bu7Ps-W7cvjeX-HhsQHaLt?w=198&h=314&c=7&r=0&o=5&dpr=1.1&pid=1.7",
+            "https://tse2-mm.cn.bing.net/th/id/OIP-C.LwSuF8aoVeO-THejH3PoOQHaLG?w=202&h=303&c=7&r=0&o=5&dpr=1.1&pid=1.7"};
     @Resource
     private UserMapper userMapper;
 
@@ -55,9 +67,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private static final String SALT = "jinchan";
 
     @Override
-    public long userRegister(String userAccount, String userPassword, String checkPassword) {
+    public long userRegister(String phone, String code, String userAccount, String userPassword, String checkPassword) {
         // 1. 校验
-        if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword)) {
+        if (StringUtils.isAnyBlank(phone, code, userAccount, userPassword, checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
         }
         if (userAccount.length() < 4) {
@@ -65,6 +77,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         if (userPassword.length() < 8 || checkPassword.length() < 8) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户密码过短");
+        }
+        LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        userLambdaQueryWrapper.eq(User::getPhone, phone);
+        long phoneNum = this.count(userLambdaQueryWrapper);
+        if (phoneNum >= 1) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "该手机号已注册");
+        }
+        String key = REGISTER_CODE_KEY + phone;
+        Boolean hasKey = stringRedisTemplate.hasKey(key);
+        if (Boolean.FALSE.equals(hasKey)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "请先获取验证码");
+        }
+        String correctCode = stringRedisTemplate.opsForValue().get(key);
+        if (correctCode == null) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+        }
+        if (!correctCode.equals(code)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码错误");
         }
         // 账户不能包含特殊字符
         String validPattern = "[`~!@#$%^&*()+=|{}':;',\\\\[\\\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
@@ -87,11 +117,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
         // 3. 插入数据
         User user = new User();
+        Random random = new Random();
+        user.setAvatarUrl(avatarUrls[random.nextInt(avatarUrls.length)]);
+        user.setPhone(phone);
+        user.setUsername(userAccount);
         user.setUserAccount(userAccount);
         user.setPassword(encryptPassword);
         boolean saveResult = this.save(user);
         if (!saveResult) {
-            return -1;
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
         return user.getId();
     }
@@ -256,8 +290,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 匹配用户
+     *
      * @param loginUser 登录用户
-     * @param num 匹配用户数量
+     * @param num       匹配用户数量
      * @return 匹配到的用户列表
      */
     @Override
@@ -318,7 +353,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         // 创建查询条件包装器，查询匹配的用户
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.in("id", userIdList).last("ORDER BY FIELD(id,"+idStr+")");
+        userQueryWrapper.in("id", userIdList).last("ORDER BY FIELD(id," + idStr + ")");
 
         // 查询并返回匹配到的用户列表
         return this.list(userQueryWrapper)
@@ -326,7 +361,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .map(this::getSafetyUser)
                 .collect(Collectors.toList());
     }
-
 
 
     /**

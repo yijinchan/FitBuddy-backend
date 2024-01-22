@@ -8,6 +8,6 @@ package com.yijinchan.constant;
  * @Author yijinchan
  * @Create 2024/1/18 19:56
  */
-public class SystemConstants {
+public interface SystemConstants {
     public static final long PAGE_SIZE = 8;
 }
