@@ -11,7 +11,7 @@ import java.util.Objects;
  * @Author yijinchan
  * @Create 2024/1/21 16:05
  */
-public class AlgorithmUtil {
+public class AlgorithmUtils {
     public static int minDistance(List<String> tagList1, List<String> tagList2) {
         int n = tagList1.size();
         int m = tagList2.size();

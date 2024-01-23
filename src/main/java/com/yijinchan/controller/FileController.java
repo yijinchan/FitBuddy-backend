@@ -7,6 +7,7 @@ import com.yijinchan.common.ResultUtils;
 import com.yijinchan.exception.BusinessException;
 import com.yijinchan.model.domain.User;
 import com.yijinchan.service.UserService;
+import com.yijinchan.utils.FileUtils;
 import com.yijinchan.utils.QiNiuUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -62,34 +63,7 @@ public class FileController {
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN, "请登录");
         }
-        //获取原文件名
-        String originalFilename = file.getOriginalFilename();
-        if (Strings.isEmpty(originalFilename)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        //获取后缀名
-        String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
-        if (Strings.isEmpty(suffix)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        //设置新文件名
-        String filename = UUID.randomUUID().toString() + suffix;
-        File dir = new File(System.getProperty("user.dir") + basePath);
-        //如果文件夹不存在则新建文件夹
-        if (!dir.exists()) {
-            dir.mkdir();
-        }
-        File localFile = new File(System.getProperty("user.dir") + basePath + filename);
-        try {
-            //将文件从tomcat临时目录转移到指定的目录
-            file.transferTo(localFile);
-        } catch (IOException e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
-        }
-        byte[] imageStream = getImageStream(localFile);
-        QiNiuUtils.upload(imageStream, filename);
-        localFile.delete();
-        //上传七牛云
+        String filename = FileUtils.uploadFile(file);
         String fileUrl = QiNiuUrl + filename;
         User user = new User();
         user.setId(loginUser.getId());
@@ -131,23 +105,4 @@ public class FileController {
         }
     }
 
-    public static byte[] getImageStream(File imageFile) {
-        byte[] buffer = null;
-        FileInputStream fis;
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            fis = new FileInputStream(imageFile);
-            byte[] b = new byte[1024];
-            int n;
-            while ((n = fis.read(b)) != -1) {
-                bos.write(b, 0, n);
-            }
-            fis.close();
-            bos.close();
-            buffer = bos.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return buffer;
-    }
 }

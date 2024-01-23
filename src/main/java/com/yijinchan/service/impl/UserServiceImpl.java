@@ -1,7 +1,6 @@
 package com.yijinchan.service.impl;
 
 
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -10,8 +9,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.yijinchan.constant.UserConstants;
 import com.yijinchan.model.domain.User;
-import com.yijinchan.utils.AlgorithmUtil;
-import io.swagger.annotations.ApiModel;
+import com.yijinchan.utils.AlgorithmUtils;
 import javafx.util.Pair;
 import lombok.extern.slf4j.Slf4j;
 import com.yijinchan.common.ErrorCode;
@@ -32,10 +30,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.yijinchan.constant.RedisConstants.RECOMMEND_KEY;
 import static com.yijinchan.constant.RedisConstants.REGISTER_CODE_KEY;
 import static com.yijinchan.constant.SystemConstants.PAGE_SIZE;
-import static com.yijinchan.constant.UserConstants.ADMIN_ROLE;
 import static com.yijinchan.constant.UserConstants.USER_LOGIN_STATE;
 
 /**
@@ -385,7 +381,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             List<String> userTagList = gson.fromJson(userTags, new TypeToken<List<String>>() {
             }.getType());
             // 计算分数
-            long distance = AlgorithmUtil.minDistance(tagList, userTagList);
+            long distance = AlgorithmUtils.minDistance(tagList, userTagList);
             list.add(new Pair<>(user, distance));
         }
         // 按编辑距离由小到大排序

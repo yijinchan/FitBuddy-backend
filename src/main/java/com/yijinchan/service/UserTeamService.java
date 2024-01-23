@@ -4,7 +4,7 @@ import com.yijinchan.model.domain.UserTeam;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
-* @author Zhang Bridge
+* @author jinchan
 * @description 针对表【user_team(用户队伍关系)】的数据库操作Service
 * @createDate 2024-01-19 16:46:47
 */
