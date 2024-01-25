@@ -3,8 +3,12 @@ package com.yijinchan.service.impl;
 import java.util.ArrayList;
 import java.util.Date;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
+import com.yijinchan.common.ErrorCode;
+import com.yijinchan.exception.BusinessException;
 import com.yijinchan.mapper.BlogMapper;
 import com.yijinchan.model.domain.Blog;
 import com.yijinchan.model.domain.User;
@@ -14,6 +18,8 @@ import com.yijinchan.utils.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import static com.yijinchan.constant.SystemConstants.PAGE_SIZE;
 
 /**
 * @author jinchan
@@ -54,6 +60,17 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         blog.setContent(blogAddRequest.getContent());
         // 保存blog到数据库并返回保存结果
         return this.save(blog);
+    }
+
+
+    @Override
+    public Page<Blog> listMyBlogs(long currentPage, Long id) {
+        if (currentPage<=0){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        LambdaQueryWrapper<Blog> blogLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        blogLambdaQueryWrapper.eq(Blog::getUserId,id);
+        return this.page(new Page<>(currentPage, PAGE_SIZE), blogLambdaQueryWrapper);
     }
 
 }

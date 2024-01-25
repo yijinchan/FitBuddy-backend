@@ -53,4 +53,13 @@ public class BlogController {
         return ResultUtils.success("添加成功");
     }
 
+    @GetMapping("/list/my/blog")
+    public BaseResponse<Page<Blog>> listMyBlogs(long currentPage,HttpServletRequest request){
+        User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        Page<Blog> blogPage = blogService.listMyBlogs(currentPage, loginUser.getId());
+        return ResultUtils.success(blogPage);
+    }
 }

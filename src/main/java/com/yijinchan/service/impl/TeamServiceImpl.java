@@ -1,5 +1,6 @@
 package com.yijinchan.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -340,6 +341,42 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
         }
         // 删除队伍
         return this.removeById(teamId);
+    }
+    /**
+     * 根据团队ID和用户ID获取团队信息
+     *
+     * @param teamId 团队ID
+     * @param userId 用户ID
+     * @return TeamVO 团队信息
+     */
+    @Override
+    public TeamVO getTeam(Long teamId, Long userId) {
+        // 根据团队ID获取团队对象
+        Team team = this.getById(teamId);
+        // 创建一个TeamVO对象
+        TeamVO teamVO = new TeamVO();
+        // 将团队对象的属性复制到TeamVO对象中
+        BeanUtils.copyProperties(team, teamVO);
+
+        // 创建一个LambdaQueryWrapper对象用于查询条件
+        LambdaQueryWrapper<UserTeam> userTeamLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        // 根据团队ID查询用户团队的数量
+        long count = userTeamService.count(userTeamLambdaQueryWrapper.eq(UserTeam::getTeamId, teamId));
+        // 将用户团队数量设置到TeamVO对象中的hasJoinNum属性中
+        teamVO.setHasJoinNum(count);
+
+        // 根据用户ID查询用户团队的数量
+        long userJoin = userTeamService.count(userTeamLambdaQueryWrapper.eq(UserTeam::getUserId, userId));
+        // 判断用户是否已加入团队，将结果设置到TeamVO对象中的hasJoin属性中
+        teamVO.setHasJoin(userJoin > 0);
+
+        // 根据团队ID查询用户信息
+        User leader = userService.getById(team.getUserId());
+        // 将leader的用户名设置到TeamVO对象中的leaderName属性中
+        teamVO.setLeaderName(leader.getUsername());
+
+        // 返回团队信息
+        return teamVO;
     }
 
     /**

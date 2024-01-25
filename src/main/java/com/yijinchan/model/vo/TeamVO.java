@@ -80,6 +80,8 @@ public class TeamVO implements Serializable {
     @ApiModelProperty(value = "创建人用户信息")
     private UserVO createUser;
 
+    private String leaderName;
+
     /**
      * 已加入的用户数
      */
