@@ -1,3 +1,85 @@
+DROP TABLE IF EXISTS `blog`;
+CREATE TABLE `blog`  (
+                         `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+                         `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '用户id',
+                         `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '标题',
+                         `images` varchar(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '图片，最多9张，多张以\",\"隔开',
+                         `content` varchar(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文章',
+                         `liked_num` int(8) UNSIGNED NULL DEFAULT 0 COMMENT '点赞数量',
+                         `comments_num` int(8) UNSIGNED NULL DEFAULT 0 COMMENT '评论数量',
+                         `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                         `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                         PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = COMPACT;
+
+INSERT INTO `blog` VALUES (1, 1, '一起来健身', 'd4958247-4efd-4b75-988c-a29a6ca8cea8.jpg,b8e5722c-34e9-43c5-9910-ba1a14a46749.jpg', '222', 3, 5, '2023-06-03 16:55:19', '2023-06-08 16:22:57');
+INSERT INTO `blog` VALUES (2, 1, '111', NULL, '2223', 2, 8, '2023-06-03 17:01:42', '2023-06-05 22:39:56');
+
+DROP TABLE IF EXISTS `blog_comments`;
+CREATE TABLE `blog_comments`  (
+                                  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+                                  `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '用户id',
+                                  `blog_id` bigint(20) UNSIGNED NOT NULL COMMENT '博文id',
+                                  `parent_id` bigint(20) UNSIGNED NULL DEFAULT NULL COMMENT '关联的1级评论id，如果是一级评论，则值为0',
+                                  `answer_id` bigint(20) UNSIGNED NULL DEFAULT NULL COMMENT '回复的评论id',
+                                  `content` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '回复的内容',
+                                  `liked_num` int(8) UNSIGNED NULL DEFAULT 0 COMMENT '点赞数',
+                                  `status` tinyint(1) UNSIGNED NULL DEFAULT NULL COMMENT '状态，0：正常，1：被举报，2：禁止查看',
+                                  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = COMPACT;
+
+
+
+
+DROP TABLE IF EXISTS `blog_like`;
+CREATE TABLE `blog_like`  (
+                              `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+                              `blog_id` bigint(20) NOT NULL COMMENT '博文id',
+                              `user_id` bigint(20) NOT NULL COMMENT '用户id',
+                              `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                              `update_time` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                              `is_delete` tinyint(4) NULL DEFAULT 0 COMMENT '逻辑删除',
+                              PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 47 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Compact;
+
+
+DROP TABLE IF EXISTS `comment_like`;
+CREATE TABLE `comment_like`  (
+                                 `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+                                 `comment_id` bigint(20) NOT NULL COMMENT '评论id',
+                                 `user_id` bigint(20) NOT NULL COMMENT '用户id',
+                                 `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                 `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                 `is_delete` tinyint(4) NULL DEFAULT 0 COMMENT '逻辑删除',
+                                 PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Compact;
+
+
+DROP TABLE IF EXISTS `follow`;
+CREATE TABLE `follow`  (
+                           `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+                           `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '用户id',
+                           `follow_user_id` bigint(20) UNSIGNED NOT NULL COMMENT '关注的用户id',
+                           `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                           `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                           PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = COMPACT;
+
+
+DROP TABLE IF EXISTS `sign`;
+CREATE TABLE `sign`  (
+                         `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+                         `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '用户id',
+                         `year` year NOT NULL COMMENT '签到的年',
+                         `month` tinyint(2) NOT NULL COMMENT '签到的月',
+                         `date` date NOT NULL COMMENT '签到的日期',
+                         `is_backup` tinyint(1) UNSIGNED NULL DEFAULT NULL COMMENT '是否补签',
+                         PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = COMPACT;
+
+
 DROP TABLE IF EXISTS `tag`;
 CREATE TABLE `tag`  (
                         `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -13,6 +95,7 @@ CREATE TABLE `tag`  (
                         INDEX `Idx_userId`(`user_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
 
+
 DROP TABLE IF EXISTS `team`;
 CREATE TABLE `team`  (
                          `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -27,7 +110,10 @@ CREATE TABLE `team`  (
                          `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                          `is_delete` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否删除',
                          PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '队伍' ROW_FORMAT = Compact;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '队伍' ROW_FORMAT = Compact;
+
+
+
 
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user`  (
@@ -36,7 +122,7 @@ CREATE TABLE `user`  (
                          `password` varchar(512) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '用户密码',
                          `user_account` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '账号',
                          `avatar_url` varchar(1024) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '用户头像',
-                         `gender` tinyint(4) NULL DEFAULT NULL COMMENT '性别',
+                         `gender` tinyint(4) NULL DEFAULT NULL COMMENT '性别 0-女 1-男 2-保密',
                          `profile` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
                          `phone` varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '手机号',
                          `email` varchar(512) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '邮箱',
@@ -48,7 +134,10 @@ CREATE TABLE `user`  (
                          `is_delete` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否删除',
                          PRIMARY KEY (`id`) USING BTREE,
                          UNIQUE INDEX `uniIdx_account`(`user_account`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
+
+
+
 
 DROP TABLE IF EXISTS `user_team`;
 CREATE TABLE `user_team`  (
@@ -60,4 +149,8 @@ CREATE TABLE `user_team`  (
                               `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                               `is_delete` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否删除',
                               PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '用户队伍关系' ROW_FORMAT = Compact;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '用户队伍关系' ROW_FORMAT = Compact;
+
+
+
+
