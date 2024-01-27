@@ -54,12 +54,16 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(team.getExpireTime());
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        team.setExpireTime(calendar.getTime());
+        if (team.getExpireTime()!=null){
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(team.getExpireTime());
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            team.setExpireTime(calendar.getTime());
+        }else {
+            team.setExpireTime(null);
+        }
         final long userId = loginUser.getId();
         //3.校验信息
         QueryWrapper<Team> queryWrapper = new QueryWrapper<>();

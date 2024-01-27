@@ -1,5 +1,6 @@
 package com.yijinchan.model.vo;
 
+import com.yijinchan.model.domain.Team;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -17,7 +18,7 @@ import java.util.Date;
  */
 @Data
 @ApiModel(value = "队伍用户返回")
-public class TeamVO implements Serializable {
+public class TeamVO extends Team implements Serializable {
     private static final long serialVersionUID = 2625797734453117209L;
 
     /**

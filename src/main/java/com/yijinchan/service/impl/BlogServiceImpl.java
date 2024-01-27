@@ -1,14 +1,8 @@
 package com.yijinchan.service.impl;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
 import com.yijinchan.common.ErrorCode;
 import com.yijinchan.exception.BusinessException;
 import com.yijinchan.mapper.BlogMapper;
@@ -16,6 +10,7 @@ import com.yijinchan.model.domain.Blog;
 import com.yijinchan.model.domain.BlogLike;
 import com.yijinchan.model.domain.User;
 import com.yijinchan.model.request.BlogAddRequest;
+import com.yijinchan.model.request.BlogUpdateRequest;
 import com.yijinchan.model.vo.BlogVO;
 import com.yijinchan.service.BlogLikeService;
 import com.yijinchan.service.BlogService;
@@ -27,14 +22,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.yijinchan.constant.SystemConstants.PAGE_SIZE;
+import static com.yijinchan.constant.SystemConstants.QiNiuUrl;
 
 /**
-* @author jinchan
-* @description 针对表【blog】的数据库操作Service实现
-* @createDate 2024-01-23 22:22:47
-*/
+ * @author jinchan
+ * @description 针对表【blog】的数据库操作Service实现
+ * @createDate 2024-01-23 22:22:47
+ */
 @Service
 public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         implements BlogService {
@@ -44,6 +43,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
 
     @Resource
     UserService userService;
+
     @Override
     public Boolean addBlog(BlogAddRequest blogAddRequest, User loginUser) {
         // 创建一个Blog对象
@@ -78,13 +78,31 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
 
 
     @Override
-    public Page<Blog> listMyBlogs(long currentPage, Long id) {
+    public Page<BlogVO> listMyBlogs(long currentPage, Long id) {
         if (currentPage <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         LambdaQueryWrapper<Blog> blogLambdaQueryWrapper = new LambdaQueryWrapper<>();
         blogLambdaQueryWrapper.eq(Blog::getUserId, id);
-        return this.page(new Page<>(currentPage, PAGE_SIZE), blogLambdaQueryWrapper);
+        Page<Blog> blogPage = this.page(new Page<>(currentPage, PAGE_SIZE), blogLambdaQueryWrapper);
+        Page<BlogVO> blogVOPage = new Page<>();
+        BeanUtils.copyProperties(blogPage, blogVOPage);
+        //todo 设置博文首页图片，返回图片完整url
+        List<BlogVO> blogVOList = blogPage.getRecords().stream().map((blog) -> {
+            BlogVO blogVO = new BlogVO();
+            BeanUtils.copyProperties(blog, blogVO);
+            return blogVO;
+        }).collect(Collectors.toList());
+        for (BlogVO blogVO : blogVOList) {
+            String images = blogVO.getImages();
+            if (images == null) {
+                continue;
+            }
+            String[] imgStrs = images.split(",");
+            blogVO.setCoverImage(QiNiuUrl + imgStrs[0]);
+        }
+        blogVOPage.setRecords(blogVOList);
+        return blogVOPage;
     }
 
     /**
@@ -133,11 +151,12 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
             this.update().eq("id", blogId).set("liked_num", newNum).update();
         }
     }
+
     /**
      * 分页查询博文信息
      *
      * @param currentPage 当前页码
-     * @param userId 用户ID
+     * @param userId      用户ID
      * @return 分页后的博文视图对象列表
      */
     @Override
@@ -148,33 +167,27 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         Page<BlogVO> blogVOPage = new Page<>();
         // 将博文分页对象的属性复制到博文视图对象分页页中
         BeanUtils.copyProperties(blogPage, blogVOPage);
-        // 设置博文首页图片，返回图片完整url
-        if (userId == null) {
-            return blogVOPage;
-        }
-        // 对博文分页对象的记录进行流式处理
         List<BlogVO> blogVOList = blogPage.getRecords().stream().map((blog) -> {
             // 创建一个新的博文视图对象
             BlogVO blogVO = new BlogVO();
             // 将博文对象的属性复制到博文视图对象中
             BeanUtils.copyProperties(blog, blogVO);
-            // 创建一个博文点赞的查询包装器
-            LambdaQueryWrapper<BlogLike> blogLikeLambdaQueryWrapper = new LambdaQueryWrapper<>();
-            // 设置查询条件为博文ID和用户ID等于当前博文的ID和用户ID
-            blogLikeLambdaQueryWrapper.eq(BlogLike::getBlogId, blog.getId());
-            blogLikeLambdaQueryWrapper.eq(BlogLike::getUserId, userId);
-            // 查询博文点赞的数量
-            long isLike = blogLikeService.count(blogLikeLambdaQueryWrapper);
-            // 判断是否有点赞，如果有则将isLike设置为true
-            blogVO.setIsLike(isLike > 0);
-            // 返回博文视图对象
             return blogVO;
         }).collect(Collectors.toList());
+        for (BlogVO blogVO : blogVOList) {
+            String images = blogVO.getImages();
+            if (images == null) {
+                continue;
+            }
+            String[] imgStrs = images.split(",");
+            blogVO.setCoverImage(QiNiuUrl + imgStrs[0]);
+        }
         // 将博文视图对象列表设置为博文视图对象分页页的记录
         blogVOPage.setRecords(blogVOList);
         // 返回博文视图对象分页页
         return blogVOPage;
     }
+
     @Override
     public BlogVO getBlogById(long blogId, Long userId) {
         Blog blog = this.getById(blogId);
@@ -187,7 +200,76 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         blogVO.setIsLike(isLike > 0);
         User author = userService.getById(blog.getUserId());
         blogVO.setAuthor(author);
+        String images = blogVO.getImages();
+        if (images == null) {
+            return blogVO;
+        }
+        String[] imgStrs = images.split(",");
+        ArrayList<String> imgStrList = new ArrayList<>();
+        for (String imgStr : imgStrs) {
+            imgStrList.add(QiNiuUrl + imgStr);
+        }
+        String imgStr = StringUtils.join(imgStrList, ",");
+        blogVO.setImages(imgStr);
         return blogVO;
+    }
+    @Override
+    public void deleteBlog(Long blogId, Long userId, boolean isAdmin) {
+        if (isAdmin) {
+            this.removeById(blogId);
+            return;
+        }
+        Blog blog = this.getById(blogId);
+        if (!userId.equals(blog.getUserId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        this.removeById(blogId);
+    }
+
+    /**
+     * 更新博客
+     *
+     * @param blogUpdateRequest 博客更新请求对象
+     * @param userId 用户ID
+     */
+    @Override
+    public void updateBlog(BlogUpdateRequest blogUpdateRequest, Long userId) {
+        if (blogUpdateRequest.getId() == null) { // 检查博客ID是否为空
+            throw new BusinessException(ErrorCode.PARAMS_ERROR); // 抛出业务异常，参数错误
+        }
+        Long createUserId = this.getById(blogUpdateRequest.getId()).getUserId(); // 获取创建该博客的用户ID
+        if (!createUserId.equals(userId)) { // 检查更新请求中的用户ID是否与创建博客的用户ID一致
+            throw new BusinessException(ErrorCode.NO_AUTH); // 抛出业务异常，无权限
+        }
+        String title = blogUpdateRequest.getTitle(); // 获取更新请求中的博客标题
+        String content = blogUpdateRequest.getContent(); // 获取更新请求中的博客内容
+        if (StringUtils.isAnyBlank(title, content)) { // 检查标题和内容是否为空或者换行符
+            throw new BusinessException(ErrorCode.PARAMS_ERROR); // 抛出业务异常，参数错误
+        }
+        Blog blog = new Blog(); // 创建博客对象
+        blog.setId(blogUpdateRequest.getId()); // 设置博客对象的ID
+        ArrayList<String> imageNameList = new ArrayList<>(); // 创建图片名称列表
+        if (StringUtils.isNotBlank(blogUpdateRequest.getImgStr())) { // 检查更新请求中的图片字符串是否为空或者空白
+            String imgStr = blogUpdateRequest.getImgStr(); // 获取更新请求中的图片字符串
+            String[] imgs = imgStr.split(","); // 将图片字符串按逗号分隔为字符串数组
+            for (String img : imgs) { // 遍历图片字符串数组
+                imageNameList.add(img.substring(25)); // 将截取自索引25后的图片名称添加至图片名称列表
+            }
+        }
+        if (blogUpdateRequest.getImages() != null) { // 检查更新请求中的图片是否为空
+            MultipartFile[] images = blogUpdateRequest.getImages(); // 获取更新请求中的多文件对象
+            for (MultipartFile image : images) { // 遍历图片数组
+                String filename = FileUtils.uploadFile(image); // 上传图片并获取文件名
+                imageNameList.add(filename); // 将文件名添加至图片名称列表
+            }
+        }
+        if (imageNameList.size() > 0) { // 检查图片名称列表是否为空
+            String imageStr = StringUtils.join(imageNameList, ","); // 将图片名称列表以逗号拼接成字符串
+            blog.setImages(imageStr); // 设置博客对象的图片字段
+        }
+        blog.setTitle(blogUpdateRequest.getTitle()); // 设置博客对象的标题字段
+        blog.setContent(blogUpdateRequest.getContent()); // 设置博客对象的内容字段
+        this.updateById(blog); // 更新博客对象的信息
     }
 }
 

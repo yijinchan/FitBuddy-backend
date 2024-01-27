@@ -10,6 +10,7 @@ import com.yijinchan.model.domain.User;
 import com.yijinchan.model.request.UserLoginRequest;
 import com.yijinchan.model.request.UserRegisterRequest;
 import com.yijinchan.model.request.UserUpdateRequest;
+import com.yijinchan.model.vo.UserVO;
 import com.yijinchan.service.UserService;
 import com.yijinchan.utils.ValidateCodeUtils;
 import io.swagger.annotations.Api;
@@ -268,9 +269,9 @@ public class UserController {
     @GetMapping("/page")
     @ApiOperation(value = "用户分页")
     @ApiImplicitParams({@ApiImplicitParam(name = "currentPage", value = "当前页")})
-    public BaseResponse<Page<User>> userPagination(long currentPage) {
-        Page<User> userPage = userService.userPage(currentPage);
-        return ResultUtils.success(userPage);
+    public BaseResponse<Page<UserVO>> userPagination(long currentPage) {
+        Page<UserVO> userVOPage = userService.userPage(currentPage);
+        return ResultUtils.success(userVOPage);
     }
 
     /**
@@ -284,7 +285,7 @@ public class UserController {
     @ApiImplicitParams(
             {@ApiImplicitParam(name = "currentPage", value = "当前页"),
                     @ApiImplicitParam(name = "request", value = "request请求")})
-    public BaseResponse<Page<User>> matchUsers(long currentPage, HttpServletRequest request) {
+    public BaseResponse<Page<UserVO>> matchUsers(long currentPage, HttpServletRequest request) {
         if (currentPage <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -298,4 +299,16 @@ public class UserController {
         }
     }
 
+    @GetMapping("/{id}")
+    public BaseResponse<UserVO> getUserById(@PathVariable Long id,HttpServletRequest request){
+        User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        if (id==null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        UserVO userVO = userService.getUserById(id, loginUser.getId());
+        return ResultUtils.success(userVO);
+    }
 }

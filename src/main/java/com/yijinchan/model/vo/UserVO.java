@@ -1,5 +1,6 @@
 package com.yijinchan.model.vo;
 
+import com.yijinchan.model.domain.User;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -17,7 +18,7 @@ import java.util.Date;
  */
 @Data
 @ApiModel(value = "用户返回")
-public class UserVO implements Serializable {
+public class UserVO extends User implements Serializable {
 
     private static final long serialVersionUID = -2172218520043068828L;
 
@@ -92,6 +93,8 @@ public class UserVO implements Serializable {
      */
     @ApiModelProperty(value = "用户角色")
     private Integer userRole;
+
+    private Boolean isFollow;
 
 }
 

@@ -1,5 +1,6 @@
 package com.yijinchan.model.vo;
 
+import com.yijinchan.model.domain.Blog;
 import com.yijinchan.model.domain.User;
 import lombok.Data;
 
@@ -14,7 +15,7 @@ import java.io.Serializable;
  * @Create 2024/1/25 21:39
  */
 @Data
-public class BlogVO implements Serializable {
+public class BlogVO extends Blog implements Serializable {
 
     private static final long serialVersionUID = 1508195411026290362L;
 
