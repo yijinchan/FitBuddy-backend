@@ -17,4 +17,6 @@ public class BlogCommentsVO implements Serializable {
     private static final long serialVersionUID = 4384362431081902087L;
 
     private UserVO commentUser;
+
+    private Boolean isLiked;
 }
