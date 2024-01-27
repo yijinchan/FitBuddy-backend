@@ -16,7 +16,7 @@ import java.util.Date;
  * @Create 2024/1/19 13:45
  */
 @Data
-@ApiModel(value = "队伍添加请求参数")
+@ApiModel(value = "队伍添加请求")
 public class TeamAddRequest implements Serializable {
 
     private static final long serialVersionUID = 1006159196178009294L;

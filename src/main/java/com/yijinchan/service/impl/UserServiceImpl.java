@@ -7,17 +7,22 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.yijinchan.constant.UserConstants;
-import com.yijinchan.model.domain.User;
-import com.yijinchan.utils.AlgorithmUtils;
-import javafx.util.Pair;
-import lombok.extern.slf4j.Slf4j;
 import com.yijinchan.common.ErrorCode;
+import com.yijinchan.constant.UserConstants;
 import com.yijinchan.exception.BusinessException;
 import com.yijinchan.mapper.UserMapper;
+import com.yijinchan.model.domain.Follow;
+import com.yijinchan.model.domain.User;
+import com.yijinchan.model.request.UserUpdateRequest;
+import com.yijinchan.model.vo.UserVO;
+import com.yijinchan.service.FollowService;
 import com.yijinchan.service.UserService;
+import com.yijinchan.utils.AlgorithmUtil;
+import javafx.util.Pair;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -30,7 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.yijinchan.constant.RedisConstants.REGISTER_CODE_KEY;
+import static com.yijinchan.constant.RedisConstants.*;
 import static com.yijinchan.constant.SystemConstants.PAGE_SIZE;
 import static com.yijinchan.constant.UserConstants.USER_LOGIN_STATE;
 
@@ -57,6 +62,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private FollowService followService;
     /**
      * 盐值，混淆密码
      */
@@ -119,10 +127,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setUsername(userAccount);
         user.setUserAccount(userAccount);
         user.setPassword(encryptPassword);
+        ArrayList<String> tag = new ArrayList<>();
+        Gson gson = new Gson();
+        String jsonTag = gson.toJson(tag);
+        user.setTags(jsonTag);
         boolean saveResult = this.save(user);
         if (!saveResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
+        stringRedisTemplate.delete(key);
         return user.getId();
     }
 
@@ -147,17 +160,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 2. 加密
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
         // 查询用户是否存在
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_account", userAccount);
-        queryWrapper.eq("password", encryptPassword);
-        User user = userMapper.selectOne(queryWrapper);
-        // 用户不存在
-        if (user == null) {
-            log.info("user login failed, userAccount cannot match userPassword");
-            return null;
+        LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        userLambdaQueryWrapper.eq(User::getUserAccount,userAccount);
+        User userInDatabase = this.getOne(userLambdaQueryWrapper);
+        if (userInDatabase==null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"用户不存在");
+        }
+        if (!userInDatabase.getPassword().equals(encryptPassword)){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"密码错误");
         }
         // 3. 用户脱敏
-        User safetyUser = getSafetyUser(user);
+        User safetyUser = getSafetyUser(userInDatabase);
         // 4. 记录用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, safetyUser);
         return safetyUser;
@@ -209,7 +222,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @return
      */
     @Override
-    public Page<User> searchUsersByTags(List<String> tagNameList,long currentPage) {
+    public Page<User> searchUsersByTags(List<String> tagNameList, long currentPage) {
         if (CollectionUtils.isEmpty(tagNameList)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -217,7 +230,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         for (String tagName : tagNameList) {
             userLambdaQueryWrapper = userLambdaQueryWrapper.or().like(Strings.isNotEmpty(tagName), User::getTags, tagName);
         }
-        return page(new Page<>(currentPage,PAGE_SIZE),userLambdaQueryWrapper);
+        return page(new Page<>(currentPage, PAGE_SIZE), userLambdaQueryWrapper);
     }
 
     /**
@@ -254,8 +267,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @param currentPage 当前页面数
      * @return 页面对象
      */
-    public Page<User> userPage(long currentPage) {
-        return this.page(new Page<>(currentPage, PAGE_SIZE));
+    public Page<UserVO> userPage(long currentPage) {
+        Page<User> page = this.page(new Page<>(currentPage, PAGE_SIZE));
+        Page<UserVO> userVOPage = new Page<>();
+        BeanUtils.copyProperties(page, userVOPage);
+        return userVOPage;
     }
 
 
@@ -276,8 +292,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         return (User) userObj;
     }
-    public Boolean isLogin(HttpServletRequest request){
-        if (request==null){
+
+    public Boolean isLogin(HttpServletRequest request) {
+        if (request == null) {
             return false;
         }
         Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
@@ -289,6 +306,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 匹配用户
+     *
      * @param loginUser 登录用户
      * @return 匹配到的用户列表
      */
@@ -360,12 +378,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 //    }
 //
     @Override
-    public Page<User> matchUser(long currentPage, User loginUser) {
+    public Page<UserVO> matchUser(long currentPage, User loginUser) {
+        String tags = loginUser.getTags();
+        if (tags == null) {
+            return this.userPage(currentPage);
+        }
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.select("id", "tags");
         queryWrapper.isNotNull("tags");
         List<User> userList = this.list(queryWrapper);
-        String tags = loginUser.getTags();
         Gson gson = new Gson();
         List<String> tagList = gson.fromJson(tags, new TypeToken<List<String>>() {
         }.getType());
@@ -382,7 +403,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             List<String> userTagList = gson.fromJson(userTags, new TypeToken<List<String>>() {
             }.getType());
             // 计算分数
-            long distance = AlgorithmUtils.minDistance(tagList, userTagList);
+            long distance = AlgorithmUtil.minDistance(tagList, userTagList);
             list.add(new Pair<>(user, distance));
         }
         // 按编辑距离由小到大排序
@@ -403,7 +424,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 finalUserPairList.add(topUserPairList.get(i));
             }
         } else {
-            for (int i = begin; i <= end; i++) {
+            for (int i = begin; i < end; i++) {
                 finalUserPairList.add(topUserPairList.get(i));
             }
         }
@@ -412,16 +433,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String idStr = StringUtils.join(userIdList, ",");
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
         userQueryWrapper.in("id", userIdList).last("ORDER BY FIELD(id," + idStr + ")");
-        List<User> records = this.list(userQueryWrapper)
+        List<UserVO> userVOList = this.list(userQueryWrapper)
                 .stream()
-                .map(this::getSafetyUser)
+                .map((user) -> {
+                    UserVO userVO = new UserVO();
+                    BeanUtils.copyProperties(user, userVO);
+                    LambdaQueryWrapper<Follow> followLambdaQueryWrapper = new LambdaQueryWrapper<>();
+                    followLambdaQueryWrapper.eq(Follow::getUserId, loginUser.getId()).eq(Follow::getFollowUserId, userVO.getId());
+                    long count = followService.count(followLambdaQueryWrapper);
+                    userVO.setIsFollow(count > 0);
+                    return userVO;
+                })
                 .collect(Collectors.toList());
-        Page<User> userPage = new Page<>();
-        userPage.setRecords(records);
-        userPage.setCurrent(currentPage);
-        userPage.setSize(records.size());
-        userPage.setTotal(userList.size());
-        return userPage;
+        Page<UserVO> userVOPage = new Page<>();
+        userVOPage.setRecords(userVOList);
+        userVOPage.setCurrent(currentPage);
+        userVOPage.setSize(userVOList.size());
+        userVOPage.setTotal(userVOList.size());
+        return userVOPage;
+    }
+
+    @Override
+    public UserVO getUserById(Long userId, Long loginUserId) {
+        User user = this.getById(userId);
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user, userVO);
+        LambdaQueryWrapper<Follow> followLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        followLambdaQueryWrapper.eq(Follow::getUserId, loginUserId).eq(Follow::getFollowUserId, userId);
+        long count = followService.count(followLambdaQueryWrapper);
+        userVO.setIsFollow(count > 0);
+        return userVO;
     }
 
     /**
@@ -430,6 +471,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @param tagNameList 标签名列表
      * @return 用户列表
      */
+    @Deprecated
     private List<User> searchByMemory(List<String> tagNameList) {
         List<User> userList = userMapper.selectList(null);
         Gson gson = new Gson();
@@ -446,6 +488,100 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             return true;
         }).map(this::getSafetyUser).collect(Collectors.toList());
     }
+
+    @Override
+    public List<String> getUserTags(Long id) {
+        User user = this.getById(id);
+        String userTags = user.getTags();
+        Gson gson = new Gson();
+        return gson.fromJson(userTags, new TypeToken<List<String>>() {
+        }.getType());
+    }
+
+    @Override
+    public void updateTags(List<String> tags, Long userId) {
+        User user = new User();
+        Gson gson = new Gson();
+        String tagsJson = gson.toJson(tags);
+        user.setId(userId);
+        user.setTags(tagsJson);
+        this.updateById(user);
+    }
+
+    @Override
+    public void updateUserWithCode(UserUpdateRequest updateRequest, Long userId) {
+        String key;
+        boolean isPhone=false;
+        if (StringUtils.isNotBlank(updateRequest.getPhone())) {
+            key = USER_UPDATE_PHONE_KEY+updateRequest.getPhone();
+            isPhone=true;
+        } else {
+            key = USER_UPDATE_EMAIL_KEY + updateRequest.getEmail();
+        }
+        String correctCode = stringRedisTemplate.opsForValue().get(key);
+        if (correctCode == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请先发送验证码");
+        }
+        if (!correctCode.equals(updateRequest.getCode())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码错误");
+        }
+        if (isPhone){
+            LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            userLambdaQueryWrapper.eq(User::getPhone,updateRequest.getPhone());
+            User user = this.getOne(userLambdaQueryWrapper);
+            if (user!=null){
+                throw new BusinessException(ErrorCode.PARAMS_ERROR,"该手机号已被绑定");
+            }
+        }else {
+            LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            userLambdaQueryWrapper.eq(User::getEmail,updateRequest.getEmail());
+            User user = this.getOne(userLambdaQueryWrapper);
+            if (user!=null){
+                throw new BusinessException(ErrorCode.PARAMS_ERROR,"该邮箱已被绑定");
+            }
+        }
+        User user = new User();
+        BeanUtils.copyProperties(updateRequest, user);
+        user.setId(userId);
+        this.updateById(user);
+    }
+
+    @Override
+    public Page<UserVO> getRandomUser() {
+        List<User> randomUser = userMapper.getRandomUser();
+        List<UserVO> userVOList = randomUser.stream().map((item) -> {
+            UserVO userVO = new UserVO();
+            BeanUtils.copyProperties(item, userVO);
+            return userVO;
+        }).collect(Collectors.toList());
+        BeanUtils.copyProperties(randomUser,userVOList);
+        Page<UserVO> userVOPage = new Page<>();
+        userVOPage.setRecords(userVOList);
+        return userVOPage;
+    }
+
+    @Override
+    public void updatePassword(String phone, String code, String password, String confirmPassword) {
+        if (!password.equals(confirmPassword)){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"两次输入的密码不一致");
+        }
+        String key = USER_FORGET_PASSWORD_KEY + phone;
+        String correctCode = stringRedisTemplate.opsForValue().get(key);
+        if (correctCode==null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"请先获取验证码");
+        }
+        if (!correctCode.equals(code)){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"验证码错误");
+        }
+        LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        userLambdaQueryWrapper.eq(User::getPhone,phone);
+        User user = this.getOne(userLambdaQueryWrapper);
+        String encryptPassword = DigestUtils.md5DigestAsHex((SALT + password).getBytes());
+        user.setPassword(encryptPassword);
+        this.updateById(user);
+        stringRedisTemplate.delete(key);
+    }
+
 
 }
 

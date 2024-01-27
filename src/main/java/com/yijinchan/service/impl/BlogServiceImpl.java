@@ -8,12 +8,15 @@ import com.yijinchan.exception.BusinessException;
 import com.yijinchan.mapper.BlogMapper;
 import com.yijinchan.model.domain.Blog;
 import com.yijinchan.model.domain.BlogLike;
+import com.yijinchan.model.domain.Follow;
 import com.yijinchan.model.domain.User;
 import com.yijinchan.model.request.BlogAddRequest;
 import com.yijinchan.model.request.BlogUpdateRequest;
 import com.yijinchan.model.vo.BlogVO;
+import com.yijinchan.model.vo.UserVO;
 import com.yijinchan.service.BlogLikeService;
 import com.yijinchan.service.BlogService;
+import com.yijinchan.service.FollowService;
 import com.yijinchan.service.UserService;
 import com.yijinchan.utils.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,35 +47,29 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     @Resource
     UserService userService;
 
+    @Resource
+    private FollowService followService;
+
     @Override
     public Boolean addBlog(BlogAddRequest blogAddRequest, User loginUser) {
-        // 创建一个Blog对象
         Blog blog = new Blog();
-        // 创建一个存储图片名称的ArrayList
         ArrayList<String> imageNameList = new ArrayList<>();
-        // 获取上传的图片
-        MultipartFile[] images = blogAddRequest.getImages();
-        // 如果图片不为空
-        if (images != null) {
-            // 遍历每一张图片
-            for (MultipartFile image : images) {
-                // 上传图片并获取文件名
-                String filename = FileUtils.uploadFile(image);
-                // 将文件名添加到imageNameList中
-                imageNameList.add(filename);
+        try {
+            MultipartFile[] images = blogAddRequest.getImages();
+            if (images != null) {
+                for (MultipartFile image : images) {
+                    String filename = FileUtils.uploadFile(image);
+                    imageNameList.add(filename);
+                }
+                String imageStr = StringUtils.join(imageNameList, ",");
+                blog.setImages(imageStr);
             }
-            // 将imageNameList中的元素用逗号拼接成字符串
-            String imageStr = StringUtils.join(imageNameList, ",");
-            // 将拼接后的字符串设置到blog的images属性中
-            blog.setImages(imageStr);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());
         }
-        // 设置blog的userId为loginUser的id
         blog.setUserId(loginUser.getId());
-        // 设置blog的title为blogAddRequest的title
         blog.setTitle(blogAddRequest.getTitle());
-        // 设置blog的内容为blogAddRequest的内容
         blog.setContent(blogAddRequest.getContent());
-        // 保存blog到数据库并返回保存结果
         return this.save(blog);
     }
 
@@ -199,7 +196,13 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         long isLike = blogLikeService.count(blogLikeLambdaQueryWrapper);
         blogVO.setIsLike(isLike > 0);
         User author = userService.getById(blog.getUserId());
-        blogVO.setAuthor(author);
+        UserVO authorVO = new UserVO();
+        BeanUtils.copyProperties(author, authorVO);
+        LambdaQueryWrapper<Follow> followLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        followLambdaQueryWrapper.eq(Follow::getFollowUserId, authorVO.getId()).eq(Follow::getUserId, userId);
+        long count = followService.count(followLambdaQueryWrapper);
+        authorVO.setIsFollow(count > 0);
+        blogVO.setAuthor(authorVO);
         String images = blogVO.getImages();
         if (images == null) {
             return blogVO;
@@ -271,6 +274,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         blog.setContent(blogUpdateRequest.getContent()); // 设置博客对象的内容字段
         this.updateById(blog); // 更新博客对象的信息
     }
+
 }
 
 

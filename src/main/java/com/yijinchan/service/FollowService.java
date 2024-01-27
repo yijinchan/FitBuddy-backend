@@ -2,6 +2,9 @@ package com.yijinchan.service;
 
 import com.yijinchan.model.domain.Follow;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.yijinchan.model.domain.User;
+
+import java.util.List;
 
 /**
 * @author Zhang Bridge
@@ -10,4 +13,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface FollowService extends IService<Follow> {
     void followUser(Long followUserId, Long userId);
+
+    List<User> listUserFollowedMe(Long userId);
 }

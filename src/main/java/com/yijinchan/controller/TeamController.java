@@ -193,20 +193,6 @@ public class TeamController {
         return getUserJoinedList(loginUser, finalPage);
     }
 
-    private Page<TeamVO> getTeamHasJoinNum(Page<TeamVO> teamVOPage) {
-        List<TeamVO> teamList = teamVOPage.getRecords();
-        teamList.forEach((team) -> {
-            LambdaQueryWrapper<UserTeam> userTeamLambdaQueryWrapper = new LambdaQueryWrapper<>();
-            userTeamLambdaQueryWrapper.eq(UserTeam::getTeamId, team.getId());
-            long hasJoinNum = userTeamService.count(userTeamLambdaQueryWrapper);
-            team.setHasJoinNum(hasJoinNum);
-        });
-        teamVOPage.setRecords(teamList);
-        return teamVOPage;
-    }
-
-
-
     /**
      * 获取我加入的队伍
      *
@@ -240,7 +226,9 @@ public class TeamController {
 
         // 获取队伍ID列表
         List<Long> idList = new ArrayList<>(listMap.keySet());
-
+        if (idList.isEmpty()){
+            return ResultUtils.success(new Page<TeamVO>());
+        }
         // 设置队伍查询参数的队伍ID列表
         teamQuery.setIdList(idList);
 
@@ -284,6 +272,23 @@ public class TeamController {
         }
         // 返回队伍列表及状态信息
         return ResultUtils.success(teamPage);
+    }
+
+    /**
+     * 获取具有加入人数的团队
+     * @param teamVOPage 分页对象，包含团队信息
+     * @return 分页对象，包含具有加入人数的团队信息
+     */
+    private Page<TeamVO> getTeamHasJoinNum(Page<TeamVO> teamVOPage) {
+        List<TeamVO> teamList = teamVOPage.getRecords();
+        teamList.forEach((team) -> {
+            LambdaQueryWrapper<UserTeam> userTeamLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            userTeamLambdaQueryWrapper.eq(UserTeam::getTeamId, team.getId());
+            long hasJoinNum = userTeamService.count(userTeamLambdaQueryWrapper);
+            team.setHasJoinNum(hasJoinNum);
+        });
+        teamVOPage.setRecords(teamList);
+        return teamVOPage;
     }
 
 

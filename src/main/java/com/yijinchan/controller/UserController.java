@@ -1,5 +1,6 @@
 package com.yijinchan.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yijinchan.common.BaseResponse;
@@ -7,12 +8,15 @@ import com.yijinchan.common.ErrorCode;
 import com.yijinchan.common.ResultUtils;
 import com.yijinchan.exception.BusinessException;
 import com.yijinchan.model.domain.User;
+import com.yijinchan.model.request.UpdatePasswordRequest;
 import com.yijinchan.model.request.UserLoginRequest;
 import com.yijinchan.model.request.UserRegisterRequest;
 import com.yijinchan.model.request.UserUpdateRequest;
 import com.yijinchan.model.vo.UserVO;
 import com.yijinchan.service.UserService;
+import com.yijinchan.utils.SMSUtils;
 import com.yijinchan.utils.ValidateCodeUtils;
+import io.netty.handler.codec.MessageAggregationException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -21,17 +25,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.yijinchan.constant.RedisConstants.REGISTER_CODE_KEY;
-import static com.yijinchan.constant.RedisConstants.REGISTER_CODE_TTL;
+import static com.yijinchan.constant.RedisConstants.*;
+import static com.yijinchan.constant.SystemConstants.EMAIL_FROM;
 import static com.yijinchan.constant.UserConstants.USER_LOGIN_STATE;
 
 
@@ -51,26 +61,79 @@ public class UserController {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    @Resource
+    private JavaMailSender javaMailSender;  // 注入JavaMailSender对象，用于发送邮件
+
+
     /**
      * 短信发送
+     *
      * @param phone 手机号
      * @return 发送结果
      */
     @GetMapping("/message")
-    @ApiOperation(value = "短信发送")
+    @ApiOperation(value = "发送验证码")
     @ApiImplicitParams(
-            @ApiImplicitParam(name = "phone", value = "手机号")
+            {@ApiImplicitParam(name = "phone", value = "手机号"),
+                    @ApiImplicitParam(name = "request", value = "request请求")}
     )
-    public BaseResponse sendMessage(String phone) {
-        //todo SMS服务
+    public BaseResponse<String> sendMessage(String phone, HttpServletRequest request) {
+        User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
         if (StringUtils.isBlank(phone)) {
-            return ResultUtils.error(ErrorCode.PARAMS_ERROR);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Integer code = ValidateCodeUtils.generateValidateCode(6);
         String key = REGISTER_CODE_KEY + phone;
         stringRedisTemplate.opsForValue().set(key, String.valueOf(code), REGISTER_CODE_TTL, TimeUnit.MINUTES);
-        System.out.println(code);
+//        System.out.println(code);
+        SMSUtils.sendMessage(phone, String.valueOf(code));
         return ResultUtils.success("短信发送成功");
+    }
+
+    @GetMapping("/message/update/phone")
+    @ApiOperation(value = "发送手机号更新验证码")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "phone", value = "手机号")})
+    public BaseResponse<String> sendMessage(String phone) {
+        if (StringUtils.isBlank(phone)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Integer code = ValidateCodeUtils.generateValidateCode(6);
+        String key = USER_UPDATE_PHONE_KEY + phone;
+        stringRedisTemplate.opsForValue().set(key, String.valueOf(code), USER_UPDATE_PHONE_TTL, TimeUnit.MINUTES);
+//        System.out.println(code);
+        SMSUtils.sendMessage(phone, String.valueOf(code));
+        return ResultUtils.success("短信发送成功");
+    }
+
+    @GetMapping("/message/update/email")
+    @ApiOperation(value = "发送邮箱更新验证码")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "email", value = "邮箱"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
+    public BaseResponse<String> sendMailUpdateMessage(String email, HttpServletRequest request) throws MessagingException {
+        User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        if (StringUtils.isBlank(email)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Integer code = ValidateCodeUtils.generateValidateCode(6);
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+        mimeMessageHelper.setFrom(new InternetAddress("SUPER <" + EMAIL_FROM + ">"));
+        mimeMessageHelper.setTo(email);
+        mimeMessageHelper.setSubject("SUPER 验证码");
+        mimeMessageHelper.setText("我们收到了一项请求，要求更新您的邮箱地址为" + email + "。本次操作的验证码为：" + code + "。如果您并未请求此验证码，则可能是他人正在尝试修改以下 SUPER 帐号：" + loginUser.getUserAccount() + "。请勿将此验证码转发给或提供给任何人。");
+        javaMailSender.send(mimeMessage);
+        String key = USER_UPDATE_EMAIL_KEY + email;
+        stringRedisTemplate.opsForValue().set(key, String.valueOf(code), USER_UPDATE_EMAIl_TTL, TimeUnit.MINUTES);
+//        System.out.println(code);
+        return ResultUtils.success("ok");
     }
 
     /**
@@ -144,7 +207,61 @@ public class UserController {
         // 返回成功结果
         return ResultUtils.success(result);
     }
+    @GetMapping("/forget")
+    @ApiOperation(value = "通过手机号查询用户")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "phone", value = "手机号")})
+    public BaseResponse<String> getUserByPhone(String phone) {
+        if (phone==null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        userLambdaQueryWrapper.eq(User::getPhone, phone);
+        User user = userService.getOne(userLambdaQueryWrapper);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "该手机号未绑定账号");
+        } else {
+            String key = USER_FORGET_PASSWORD_KEY + phone;
+            Integer code = ValidateCodeUtils.generateValidateCode(4);
+            SMSUtils.sendMessage(phone, String.valueOf(code));
+//            System.out.println(code);
+            stringRedisTemplate.opsForValue().set(key, String.valueOf(code), USER_FORGET_PASSWORD_TTL, TimeUnit.MINUTES);
+            return ResultUtils.success(user.getUserAccount());
+        }
+    }
 
+    @GetMapping("/check")
+    @ApiOperation(value = "校验验证码")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "phone", value = "手机号"),
+                    @ApiImplicitParam(name = "code", value = "验证码")})
+    public BaseResponse<String> checkCode(String phone, String code) {
+        String key = USER_FORGET_PASSWORD_KEY + phone;
+        String correctCode = stringRedisTemplate.opsForValue().get(key);
+        if (correctCode == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请先获取验证码");
+        }
+        if (!correctCode.equals(code)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码错误");
+        }
+        return ResultUtils.success("ok");
+    }
+
+    @PutMapping("/forget")
+    @ApiOperation(value = "修改密码")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "updatePasswordRequest", value = "修改密码请求")})
+    public BaseResponse<String> updatePassword(@RequestBody UpdatePasswordRequest updatePasswordRequest) {
+        String phone = updatePasswordRequest.getPhone();
+        String code = updatePasswordRequest.getCode();
+        String password = updatePasswordRequest.getPassword();
+        String confirmPassword = updatePasswordRequest.getConfirmPassword();
+        if (StringUtils.isAnyBlank(phone, code, password, confirmPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        userService.updatePassword(phone, code, password, confirmPassword);
+        return ResultUtils.success("ok");
+    }
     /**
      * 获取当前用户信息
      *
@@ -176,11 +293,11 @@ public class UserController {
     @GetMapping("/search/tags")
     @ApiOperation(value = "通过标签搜索用户")
     @ApiImplicitParams({@ApiImplicitParam(name = "tagNameList", value = "标签列表")})
-    public BaseResponse<Page<User>> searchUsersByTags(@RequestParam(required = false) List<String> tagNameList,long currentPage) {
+    public BaseResponse<Page<User>> searchUsersByTags(@RequestParam(required = false) List<String> tagNameList, long currentPage) {
         if (CollectionUtils.isEmpty(tagNameList)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Page<User> userList = userService.searchUsersByTags(tagNameList,currentPage);
+        Page<User> userList = userService.searchUsersByTags(tagNameList, currentPage);
         return ResultUtils.success(userList);
     }
 
@@ -213,8 +330,8 @@ public class UserController {
     /**
      * 更新用户
      *
-     * @param   updateRequest updateReques
-     * @param request request请求
+     * @param updateRequest updateReques
+     * @param request       request请求
      * @return 更新成功返回1，更新失败抛出BusinessException
      */
     @PostMapping("/update")
@@ -223,14 +340,26 @@ public class UserController {
             {@ApiImplicitParam(name = "user", value = "用户更新请求参数"),
                     @ApiImplicitParam(name = "request", value = "request请求")})
     public BaseResponse<String> updateUser(@RequestBody UserUpdateRequest updateRequest, HttpServletRequest request) {
-        if (updateRequest == null || request == null) {
+        User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        if (updateRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        if (StringUtils.isNotBlank(updateRequest.getEmail()) || StringUtils.isNotBlank(updateRequest.getPhone())) {
+            if (StringUtils.isBlank(updateRequest.getCode())) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "请输入验证码");
+            } else {
+                userService.updateUserWithCode(updateRequest, loginUser.getId());
+                return ResultUtils.success("ok");
+            }
         }
         User user = new User();
         BeanUtils.copyProperties(updateRequest, user);
         boolean flag = userService.updateUser(user, request);
         if (flag) {
-            return ResultUtils.success("用户更新成功");
+            return ResultUtils.success("ok");
         } else {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
@@ -276,8 +405,9 @@ public class UserController {
 
     /**
      * 获取匹配用户
+     *
      * @param currentPage 当前页
-     * @param request 请求对象
+     * @param request     请求对象
      * @return 匹配用户的响应结果
      */
     @GetMapping("/match")
@@ -290,25 +420,55 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Boolean isLogin = userService.isLogin(request);
-        if (isLogin){
+        if (isLogin) {
             User user = userService.getLoginUser(request);
             return ResultUtils.success(userService.matchUser(currentPage, user));
-        }else {
-            //todo 未登录时随机查询
-            return ResultUtils.success(userService.userPage(currentPage));
+        } else {
+            return ResultUtils.success(userService.getRandomUser());
         }
     }
 
     @GetMapping("/{id}")
-    public BaseResponse<UserVO> getUserById(@PathVariable Long id,HttpServletRequest request){
+    @ApiOperation(value = "根据id获取用户")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "id", value = "用户id"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
+    public BaseResponse<UserVO> getUserById(@PathVariable Long id, HttpServletRequest request) {
         User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        if (id==null){
+        if (id == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         UserVO userVO = userService.getUserById(id, loginUser.getId());
         return ResultUtils.success(userVO);
+    }
+
+    @GetMapping("/tags")
+    @ApiOperation(value = "获取当前用户标签")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "request", value = "request请求")})
+    public BaseResponse<List<String>> getUserTags(HttpServletRequest request) {
+        User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        List<String> userTags = userService.getUserTags(loginUser.getId());
+        return ResultUtils.success(userTags);
+    }
+
+    @PutMapping("/update/tags")
+    @ApiOperation(value = "更新用户标签")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "tags", value = "标签"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
+    public BaseResponse<String> updateUserTags(@RequestBody List<String> tags, HttpServletRequest request) {
+        User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        userService.updateTags(tags, loginUser.getId());
+        return ResultUtils.success("ok");
     }
 }

@@ -11,6 +11,10 @@ import com.yijinchan.model.request.BlogUpdateRequest;
 import com.yijinchan.model.vo.BlogVO;
 import com.yijinchan.service.BlogService;
 import com.yijinchan.service.UserService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +33,7 @@ import static com.yijinchan.constant.UserConstants.USER_LOGIN_STATE;
  */
 @RestController
 @RequestMapping("blog")
+@Api(tags = "博文管理模块")
 public class BlogController {
     @Resource
     private BlogService blogService;
@@ -37,6 +42,10 @@ public class BlogController {
     private UserService userService;
 
     @GetMapping("/list")
+    @ApiOperation(value = "获取博文")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "currentPage", value = "当前页"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
     public BaseResponse<Page<BlogVO>> listBlogPage(long currentPage, HttpServletRequest request) {
         User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
         if (loginUser == null) {
@@ -47,6 +56,10 @@ public class BlogController {
     }
 
     @PostMapping("/add")
+    @ApiOperation(value = "添加博文")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "blogAddRequest", value = "博文添加请求"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
     public BaseResponse<String> addBlog(BlogAddRequest blogAddRequest, HttpServletRequest request) {
         User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
         if (loginUser == null) {
@@ -60,6 +73,10 @@ public class BlogController {
     }
 
     @GetMapping("/list/my/blog")
+    @ApiOperation(value = "获取我写的博文")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "currentPage", value = "当前页"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
     public BaseResponse<Page<BlogVO>> listMyBlogs(long currentPage, HttpServletRequest request) {
         User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
         if (loginUser == null) {
@@ -70,6 +87,10 @@ public class BlogController {
     }
 
     @PutMapping("/like/{id}")
+    @ApiOperation(value = "点赞博文")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "id", value = "博文id"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
     public BaseResponse<String> likeBlog(@PathVariable Long id, HttpServletRequest request) {
         User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
         if (loginUser == null) {
@@ -83,6 +104,10 @@ public class BlogController {
     }
 
     @GetMapping("/{id}")
+    @ApiOperation(value = "根据id获取博文")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "id", value = "博文id"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
     public BaseResponse<BlogVO> getBlogById(@PathVariable long id, HttpServletRequest request) {
         User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
         if (loginUser == null) {
@@ -91,6 +116,10 @@ public class BlogController {
         return ResultUtils.success(blogService.getBlogById(id, loginUser.getId()));
     }
     @DeleteMapping("/{id}")
+    @ApiOperation(value = "根据id删除博文")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "id", value = "博文id"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
     public BaseResponse<String> deleteBlogById(@PathVariable Long id, HttpServletRequest request) {
         User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
         if (loginUser == null) {
@@ -105,6 +134,10 @@ public class BlogController {
     }
 
     @PutMapping("/update")
+    @ApiOperation(value = "更新博文")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "blogUpdateRequest", value = "博文更新请求"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
     public BaseResponse<String> updateBlog(BlogUpdateRequest blogUpdateRequest, HttpServletRequest request){
         User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
         if (loginUser == null) {

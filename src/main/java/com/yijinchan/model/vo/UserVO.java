@@ -26,7 +26,7 @@ public class UserVO extends User implements Serializable {
      * id
      */
     @ApiModelProperty(value = "id")
-    private long id;
+    private Long id;
 
     /**
      * 用户昵称

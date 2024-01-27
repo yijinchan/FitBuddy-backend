@@ -4,6 +4,7 @@ package com.yijinchan.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yijinchan.model.domain.User;
+import com.yijinchan.model.request.UserUpdateRequest;
 import com.yijinchan.model.vo.UserVO;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,4 +39,14 @@ public interface UserService extends IService<User> {
     Page<UserVO> matchUser(long currentPage, User loginUser);
 
     UserVO getUserById(Long userId, Long loginUserId);
+
+    List<String> getUserTags(Long id);
+
+    void updateTags(List<String> tags, Long userId);
+
+    void updateUserWithCode(UserUpdateRequest updateRequest, Long userId);
+
+    Page<UserVO> getRandomUser();
+
+    void updatePassword(String phone, String code, String password, String confirmPassword);
 }

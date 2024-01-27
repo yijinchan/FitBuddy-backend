@@ -59,4 +59,7 @@ public class UserUpdateRequest implements Serializable {
      */
     @ApiModelProperty(value = "标签列表")
     private String tags;
+
+    @ApiModelProperty(value = "验证码")
+    private String code;
 }

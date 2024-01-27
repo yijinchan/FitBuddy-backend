@@ -43,7 +43,9 @@ import static com.yijinchan.constant.SystemConstants.QiNiuUrl;
 @Api(tags = "文件管理模块")
 public class FileController {
 
-    //图片保存路径
+    /**
+     * 基本路径
+     *///图片保存路径
     @Value("${FitBuddy.img}")
     private String basePath;
 
