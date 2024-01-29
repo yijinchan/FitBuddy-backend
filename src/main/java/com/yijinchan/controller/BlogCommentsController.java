@@ -9,6 +9,7 @@ import com.yijinchan.model.request.AddCommentRequest;
 import com.yijinchan.model.vo.BlogCommentsVO;
 import com.yijinchan.service.BlogCommentsService;
 import com.yijinchan.service.BlogLikeService;
+import com.yijinchan.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -41,6 +42,8 @@ public class BlogCommentsController {
     @Resource
     private BlogCommentsService blogCommentsService;
 
+    @Resource
+    private UserService userService;
     /**
      *
      * @param addCommentRequest 博文评论添加请求
@@ -111,5 +114,20 @@ public class BlogCommentsController {
         }
         BlogCommentsVO commentsVO = blogCommentsService.getComment(id, loginUser.getId());
         return ResultUtils.success(commentsVO);
+    }
+
+    @DeleteMapping("/{id}")
+    @ApiOperation(value = "根据id删除评论")
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "id", value = "博文评论id"),
+                    @ApiImplicitParam(name = "request", value = "request请求")})
+    public BaseResponse<String> deleteBlogComment(@PathVariable Long id,HttpServletRequest request){
+        User loginUser = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        boolean isAdmin = userService.isAdmin(loginUser);
+        blogCommentsService.deleteComment(id,loginUser.getId(),isAdmin);
+        return ResultUtils.success("ok");
     }
 }

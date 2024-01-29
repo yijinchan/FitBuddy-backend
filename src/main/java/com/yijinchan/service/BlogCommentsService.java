@@ -20,4 +20,6 @@ public interface BlogCommentsService extends IService<BlogComments> {
     BlogCommentsVO getComment(long commentId, Long userId);
 
     void likeComment(long commentId, Long userId);
+
+    void deleteComment(Long id, Long id1, boolean isAdmin);
 }

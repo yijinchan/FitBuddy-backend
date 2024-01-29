@@ -236,13 +236,13 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
      * @param userId 用户ID
      */
     @Override
-    public void updateBlog(BlogUpdateRequest blogUpdateRequest, Long userId) {
+    public void updateBlog(BlogUpdateRequest blogUpdateRequest, Long userId, boolean isAdmin) {
         if (blogUpdateRequest.getId() == null) { // 检查博客ID是否为空
             throw new BusinessException(ErrorCode.PARAMS_ERROR); // 抛出业务异常，参数错误
         }
         Long createUserId = this.getById(blogUpdateRequest.getId()).getUserId(); // 获取创建该博客的用户ID
-        if (!createUserId.equals(userId)) { // 检查更新请求中的用户ID是否与创建博客的用户ID一致
-            throw new BusinessException(ErrorCode.NO_AUTH); // 抛出业务异常，无权限
+        if (!createUserId.equals(userId) && !isAdmin) {
+            throw new BusinessException(ErrorCode.NO_AUTH,"没有权限");
         }
         String title = blogUpdateRequest.getTitle(); // 获取更新请求中的博客标题
         String content = blogUpdateRequest.getContent(); // 获取更新请求中的博客内容

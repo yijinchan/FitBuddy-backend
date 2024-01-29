@@ -11,8 +11,6 @@ import com.yijinchan.model.request.TeamUpdateRequest;
 import com.yijinchan.model.vo.TeamVO;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 /**
 * @author jinchan
 * @description 针对表【team(队伍)】的数据库操作Service
@@ -30,7 +28,9 @@ public interface TeamService extends IService<Team> {
     @Transactional(rollbackFor = Exception.class)
     boolean quitTeam(TeamQuitRequest teamQuitRequest, User loginUser);
 
-    boolean deleteTeam(long id, User loginUser);
+    boolean deleteTeam(long id, User loginUser, boolean isAdmin);
 
     TeamVO getTeam(Long teamId,Long userId);
+
+    Page<TeamVO> listMyJoin(long currentPage, TeamQueryRequest teamQuery);
 }

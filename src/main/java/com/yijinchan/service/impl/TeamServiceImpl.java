@@ -328,11 +328,21 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean deleteTeam(long id, User loginUser) {
+    public boolean deleteTeam(long id, User loginUser, boolean isAdmin) {
         // 校验队伍是否存在
         Team team = getTeamById(id);
         long teamId = team.getId();
         // 校验你是不是队伍的队长
+        if (isAdmin){
+            // 移除所有加入队伍的关联信息
+            QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
+            userTeamQueryWrapper.eq("team_id", teamId);
+            boolean result = userTeamService.remove(userTeamQueryWrapper);
+            if (!result) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除队伍关联信息失败");
+            }
+            this.removeById(teamId);
+        }
         if (!team.getUserId().equals(loginUser.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH, "无访问权限");
         }
@@ -381,6 +391,40 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
 
         // 返回团队信息
         return teamVO;
+    }
+
+    @Override
+    public Page<TeamVO> listMyJoin(long currentPage, TeamQueryRequest teamQuery) {
+        List<Long> idList = teamQuery.getIdList();
+        LambdaQueryWrapper<Team> teamLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        teamLambdaQueryWrapper.in(Team::getId,idList);
+        Page<Team> teamPage = this.page(new Page<>(currentPage, PAGE_SIZE), teamLambdaQueryWrapper);
+        if (CollectionUtils.isEmpty(teamPage.getRecords())) {
+            return new Page<>();
+        }
+        Page<TeamVO> teamVOPage = new Page<>();
+        // 关联查询创建人的用户信息
+        BeanUtils.copyProperties(teamPage, teamVOPage, "records");
+        List<Team> teamPageRecords = teamPage.getRecords();
+        ArrayList<TeamVO> teamUserVOList = new ArrayList<>();
+        for (Team team : teamPageRecords) {
+            Long userId = team.getUserId();
+            if (userId == null) {
+                continue;
+            }
+            User user = userService.getById(userId);
+            TeamVO teamUserVO = new TeamVO();
+            BeanUtils.copyProperties(team, teamUserVO);
+            // 脱敏用户信息
+            if (user != null) {
+                UserVO userVO = new UserVO();
+                BeanUtils.copyProperties(user, userVO);
+                teamUserVO.setCreateUser(userVO);
+            }
+            teamUserVOList.add(teamUserVO);
+        }
+        teamVOPage.setRecords(teamUserVOList);
+        return teamVOPage;
     }
 
     /**

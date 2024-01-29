@@ -162,7 +162,8 @@ public class TeamController {
         }
         long id = teamDeleteRequest.getId();
         User loginUser = userService.getLoginUser(request);
-        boolean result = teamService.deleteTeam(id, loginUser);
+        boolean isAdmin = userService.isAdmin(loginUser);
+        boolean result = teamService.deleteTeam(id, loginUser,isAdmin);
         if (!result) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除失败");
         }
@@ -212,13 +213,9 @@ public class TeamController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
-
-        // 创建查询条件包装器
-        QueryWrapper<UserTeam> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", loginUser.getId());
-
-        // 查询用户加入的队伍列表
-        List<UserTeam> userTeamList = userTeamService.list(queryWrapper);
+        LambdaQueryWrapper<UserTeam> userTeamLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        userTeamLambdaQueryWrapper.eq(UserTeam::getUserId,loginUser.getId());
+        List<UserTeam> userTeamList = userTeamService.list(userTeamLambdaQueryWrapper);
 
         // 将队伍根据队伍ID进行分组
         Map<Long, List<UserTeam>> listMap = userTeamList.stream()
@@ -233,7 +230,7 @@ public class TeamController {
         teamQuery.setIdList(idList);
 
         // 获取队伍信息列表
-        Page<TeamVO> teamVOPage = teamService.listTeams(currentPage, teamQuery, true);
+        Page<TeamVO> teamVOPage = teamService.listMyJoin(currentPage, teamQuery);
 
         // 获取加入了的队伍信息列表
         Page<TeamVO> finalPage = getTeamHasJoinNum(teamVOPage);
