@@ -76,6 +76,12 @@ public class User implements Serializable {
     private Integer status;
 
     /**
+     * 好友id
+     */
+    @ApiModelProperty(value = "好友id")
+    private String friendIds;
+
+    /**
      * 用户角色 0-普通用户,1-管理员
      */
     @ApiModelProperty(value = "用户角色 0-普通用户,1-管理员")
