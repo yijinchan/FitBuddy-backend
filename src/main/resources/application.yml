@@ -41,15 +41,17 @@ mybatis-plus:
 knife4j:
   enable: true
   openapi:
-    title: FitBuddyInterfaceDocumentation
+    title: FitBuddy接口文档
+    description: "健身搭子平台"
     email: yijinchang@hnu.edu.cn
-    version: v1.0
-    terms-of-service-url: https://stackoverflow.com/
+    version: v1.0.0
+    concat: jinchan
     group:
-      test1:
+      FitBuddy:
         group-name: FitBuddy
         api-rule: package
         api-rule-resources:
-          - com.yijinchan
+          - com.jinchan
 FitBuddy:
   img: /img/
+  job: "0 0 0 * * ? *"

@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.yijinchan.mapper.UserMapper">
+<mapper namespace="com.jinchan.mapper.UserMapper">
 
-    <resultMap id="BaseResultMap" type="com.yijinchan.model.domain.User">
+    <resultMap id="BaseResultMap" type="com.jinchan.model.domain.User">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="username" column="username" jdbcType="VARCHAR"/>
         <result property="userAccount" column="user_account" jdbcType="VARCHAR"/>
@@ -28,7 +28,7 @@
         role,tags,create_time,
         update_time,is_delete
     </sql>
-    <select id="getRandomUser" resultType="com.yijinchan.model.domain.User">
+    <select id="getRandomUser" resultType="com.jinchan.model.domain.User">
         SELECT
             *
         FROM

@@ -1,5 +1,5 @@
 # Docker 镜像构建
-# @author 金蝉
+# @author jinchan
 FROM maven:3.5-jdk-8-alpine as builder
 
 # Copy local code to the container image.

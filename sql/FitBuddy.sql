@@ -198,3 +198,16 @@ CREATE TABLE `message`  (
                             PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Compact;
 
+DROP TABLE IF EXISTS `friends`;
+CREATE TABLE `friends`  (
+                            `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '好友申请id',
+                            `from_id` bigint(20) NOT NULL COMMENT '发送申请的用户id',
+                            `receive_id` bigint(20) NULL DEFAULT NULL COMMENT '接收申请的用户id ',
+                            `is_read` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否已读(0-未读 1-已读)',
+                            `status` tinyint(4) NOT NULL DEFAULT 0 COMMENT '申请状态 默认0 （0-未通过 1-已同意 2-已过期 3-已撤销）',
+                            `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                            `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP,
+                            `is_delete` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否删除',
+                            `remark` varchar(214) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '好友申请备注信息',
+                            PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '好友申请管理表' ROW_FORMAT = Compact;

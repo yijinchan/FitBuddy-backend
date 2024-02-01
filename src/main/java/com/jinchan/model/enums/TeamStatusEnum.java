@@ -1,0 +1,103 @@
+package com.jinchan.model.enums;
+
+/**
+ * ClassName: TeamStatusEnum
+ * Package: com.jinchan.model.enums
+ * Description:
+ *
+ * @Author jinchan
+ * @Create 2024/1/19 14:51
+ */
+public enum TeamStatusEnum {
+    /**
+     * 公共
+     */
+    PUBLIC(0, "公开"),
+    /**
+     * 私人
+     */
+    PRIVATE(1, "私有"),
+    /**
+     * 秘密
+     */
+    SECRET(2, "加密");
+    /**
+     * value
+     */
+    private int value;
+
+    /**
+     * 文本
+     */
+    private String text;
+
+    /**
+     * 得到枚举值
+     *
+     * @param value 价值
+     * @return
+     */
+    public static TeamStatusEnum getEnumByValue(Integer value) {
+        if (value == null) {
+            return null;
+        }
+        TeamStatusEnum[] values = TeamStatusEnum.values();
+        for (TeamStatusEnum teamStatusEnum : values) {
+            if (teamStatusEnum.getValue() == value) {
+                return teamStatusEnum;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 团队状态枚举
+     *
+     * @param value 价值
+     * @param text  文本
+     */
+    TeamStatusEnum(int value, String text) {
+        this.value = value;
+        this.text = text;
+    }
+
+    /**
+     * 获得价值
+     *
+     * @return int
+     */
+    public int getValue() {
+        return value;
+    }
+
+    /**
+     * 设置值
+     *
+     * @param value 价值
+     * @return
+     */
+    public TeamStatusEnum setValue(int value) {
+        this.value = value;
+        return this;
+    }
+
+    /**
+     * 得到文本
+     *
+     * @return
+     */
+    public String getText() {
+        return text;
+    }
+
+    /**
+     * 设置文本
+     *
+     * @param text 文本
+     * @return
+     */
+    public TeamStatusEnum setText(String text) {
+        this.text = text;
+        return this;
+    }
+}
