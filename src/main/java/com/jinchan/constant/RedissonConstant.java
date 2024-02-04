@@ -5,12 +5,36 @@ package com.jinchan.constant;
  * @Author jinchan
  * @Create 2024/2/1
  */
-public interface RedissonConstant {
-    /**
-     * 申请锁
-     */
-    String APPLY_LOCK="FitBuddy:apply:";
+public final class RedissonConstant {
+    private RedissonConstant() {
+    }
 
-    String DISBAND_EXPIRED_TEAM_LOCK = "FitBuddy:disbandTeam:lock";
-    String USER_RECOMMEND_LOCK = "FitBuddy:user:recommend:lock";
+    /**
+     * 应用锁
+     */
+    public static final String APPLY_LOCK = "fitbuddy:apply:lock:";
+    /**
+     * 解散过期团队锁
+     */
+    public static final String DISBAND_EXPIRED_TEAM_LOCK = "fitbuddy:disbandTeam:lock";
+    /**
+     * 用户推荐锁
+     */
+    public static final String USER_RECOMMEND_LOCK = "fitbuddy:user:recommend:lock";
+    /**
+     * 博客点赞锁
+     */
+    public static final String BLOG_LIKE_LOCK = "fitbuddy:blog:like:lock:";
+    /**
+     * 评论点赞锁
+     */
+    public static final String COMMENTS_LIKE_LOCK = "fitbuddy:comments:like:lock:";
+    /**
+     * 默认等待时间
+     */
+    public static final long DEFAULT_WAIT_TIME = 0;
+    /**
+     * 违约租赁时间
+     */
+    public static final long DEFAULT_LEASE_TIME = -1;
 }

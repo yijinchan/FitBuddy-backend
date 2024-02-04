@@ -15,6 +15,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,16 +33,12 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("blog")
 @Api(tags = "博文管理模块")
+@Log4j2
 public class BlogController {
     @Resource
     private BlogService blogService;
     @Resource
     private UserService userService;
-//    /**
-//     * 布隆过滤器
-//     */
-//    @Resource
-//    private BloomFilter bloomFilter;
 
     @GetMapping("/list")
     @ApiOperation(value = "获取博文")
@@ -71,7 +68,6 @@ public class BlogController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         blogService.addBlog(blogAddRequest, loginUser);
-//        bloomFilter.add(BLOG_BLOOM_PREFIX + blogId);
         return ResultUtils.success("添加成功");
     }
 
@@ -116,10 +112,6 @@ public class BlogController {
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-//        boolean contains = bloomFilter.contains(BLOG_BLOOM_PREFIX + id);
-//        if (!contains){
-//            return ResultUtils.success(null);
-//        }
         if (id == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }

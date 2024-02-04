@@ -12,6 +12,8 @@ import java.io.Serializable;
  */
 @Data
 public class ChatMessageVO implements Serializable {
+
+    private static final long serialVersionUID = 9189925650007592819L;
     /**
      * 发送用户
      */

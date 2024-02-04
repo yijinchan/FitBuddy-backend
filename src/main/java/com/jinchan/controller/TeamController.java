@@ -20,7 +20,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/team")
-@Slf4j
+@Log4j2
 @Api(tags = "队伍管理模块")
 public class TeamController {
     @Resource
@@ -50,12 +50,6 @@ public class TeamController {
     private TeamService teamService;
     @Resource
     private UserTeamService userTeamService;
-
-//    /**
-//     * 布隆过滤器
-//     */
-//    @Resource
-//    private BloomFilter bloomFilter;
 
     @PostMapping("/add")
     @ApiOperation(value = "添加队伍")
@@ -73,7 +67,6 @@ public class TeamController {
         Team team = new Team();
         BeanUtil.copyProperties(teamAddRequest, team);
         long teamId = teamService.addTeam(team, loginUser);
-//        bloomFilter.add(TEAM_BLOOM_PREFIX + teamId);
         return ResultUtils.success(teamId);
     }
 
@@ -104,10 +97,6 @@ public class TeamController {
         if (id == null || id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-//       boolean contains = bloomFilter.contains(String.valueOf(id));
-//        if (!contains) {
-//            return ResultUtils.success(null);
-//        }
         User loginUser = userService.getLoginUser(request);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
@@ -123,10 +112,6 @@ public class TeamController {
         if (teamQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-//        boolean contains = bloomFilter.contains(String.valueOf(teamQueryRequest.getId()));
-//        if (!contains) {
-//            return ResultUtils.success(null);
-//        }
         User loginUser = userService.getLoginUser(request);
         Page<TeamVO> teamVOPage = teamService.listTeams(currentPage, teamQueryRequest, userService.isAdmin(loginUser));
         List<TeamVO> teamList = teamVOPage.getRecords();
@@ -257,7 +242,7 @@ public class TeamController {
         // 获取队伍ID列表
         List<Long> idList = new ArrayList<>(listMap.keySet());
         if (idList.isEmpty()) {
-            return ResultUtils.success(new Page<TeamVO>());
+            return ResultUtils.success(new Page<>());
         }
         // 设置队伍查询参数的队伍ID列表
         teamQuery.setIdList(idList);
@@ -360,9 +345,7 @@ public class TeamController {
             // 将队伍id列表转换为集合
             Set<Long> joinedTeamIdList = userTeamList.stream().map(UserTeam::getTeamId).collect(Collectors.toSet());
             // 遍历队伍列表，设置队伍是否已加入的标志
-            teamList.forEach(team -> {
-                team.setHasJoin(joinedTeamIdList.contains(team.getId()));
-            });
+            teamList.forEach(team -> team.setHasJoin(joinedTeamIdList.contains(team.getId())));
             teamPage.setRecords(teamList);
         } catch (Exception e) {
             e.printStackTrace();

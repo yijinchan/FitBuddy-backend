@@ -31,7 +31,6 @@ spring:
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: on
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       logic-delete-value: 1
@@ -52,6 +51,7 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.jinchan
-FitBuddy:
+fitbuddy:
   img: /img/
   job: "0 0 0 * * ? *"
+  enable-bloom-filter: false

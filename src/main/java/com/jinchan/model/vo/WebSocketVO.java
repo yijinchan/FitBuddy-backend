@@ -10,6 +10,7 @@ import java.io.Serializable;
 @ApiModel(value = "websocket返回")
 public class WebSocketVO implements Serializable {
 
+    private static final long serialVersionUID = 6593273760974738098L;
     @ApiModelProperty(value = "id")
     private long id;
 

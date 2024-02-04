@@ -156,7 +156,7 @@ public class WebSocket {
                 WebSocket webSocket = map.get(key);
                 webSocket.sendMessage(msg);
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("exception message", e);
             }
         }
     }
@@ -212,7 +212,7 @@ public class WebSocket {
                 sendAllUsers();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("exception message", e);
         }
     }
 
@@ -239,7 +239,7 @@ public class WebSocket {
                 sendAllUsers();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("exception message", e);
         }
     }
 
@@ -261,6 +261,7 @@ public class WebSocket {
         String text = messageRequest.getText();
         Integer chatType = messageRequest.getChatType();
         User fromUser = userService.getById(userId);
+
         Team team = teamService.getById(teamId);
         if (chatType == PRIVATE_CHAT) {
             // 私聊
@@ -291,11 +292,11 @@ public class WebSocket {
         ChatMessageVO.setTeamId(team.getId());
         ChatMessageVO.setChatType(chatType);
         ChatMessageVO.setCreateTime(DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
-        if (user.getId() == team.getUserId() || user.getRole() == ADMIN_ROLE) {
+        if (Objects.equals(user.getId(), team.getUserId()) || user.getRole() == ADMIN_ROLE) {
             ChatMessageVO.setIsAdmin(true);
         }
         User loginUser = (User) this.httpSession.getAttribute(USER_LOGIN_STATE);
-        if (loginUser.getId() == user.getId()) {
+        if (Objects.equals(loginUser.getId(), user.getId())) {
             ChatMessageVO.setIsMy(true);
         }
         String toJson = new Gson().toJson(ChatMessageVO);
@@ -327,7 +328,7 @@ public class WebSocket {
             ChatMessageVO.setIsAdmin(true);
         }
         User loginUser = (User) this.httpSession.getAttribute(USER_LOGIN_STATE);
-        if (loginUser.getId() == user.getId()) {
+        if (Objects.equals(loginUser.getId(), user.getId())) {
             ChatMessageVO.setIsMy(true);
         }
         String toJson = new Gson().toJson(ChatMessageVO);
@@ -347,7 +348,7 @@ public class WebSocket {
     private void privateChat(User user, Long toId, String text, Integer chatType) {
         ChatMessageVO ChatMessageVO = chatService.chatResult(user.getId(), toId, text, chatType, DateUtil.date(System.currentTimeMillis()));
         User loginUser = (User) this.httpSession.getAttribute(USER_LOGIN_STATE);
-        if (loginUser.getId() == user.getId()) {
+        if (Objects.equals(loginUser.getId(), user.getId())) {
             ChatMessageVO.setIsMy(true);
         }
         String toJson = new Gson().toJson(ChatMessageVO);
@@ -415,7 +416,7 @@ public class WebSocket {
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("exception message", e);
             }
         }
     }
@@ -435,7 +436,7 @@ public class WebSocket {
                     session.getBasicRemote().sendText(message);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("exception message", e);
             }
         }
     }

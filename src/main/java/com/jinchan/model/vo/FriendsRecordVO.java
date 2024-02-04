@@ -16,6 +16,7 @@ import java.io.Serializable;
 @ApiModel(value = "好友记录返回")
 public class FriendsRecordVO implements Serializable {
 
+    private static final long serialVersionUID = -646707068133689717L;
     @ApiModelProperty(value = "id")
     private Long id;
 

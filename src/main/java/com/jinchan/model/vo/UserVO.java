@@ -1,6 +1,5 @@
 package com.jinchan.model.vo;
 
-import com.jinchan.model.domain.User;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -18,7 +17,7 @@ import java.util.Date;
  */
 @Data
 @ApiModel(value = "用户返回")
-public class UserVO extends User implements Serializable {
+public class UserVO implements Serializable {
 
     private static final long serialVersionUID = -2172218520043068828L;
 
@@ -37,7 +36,7 @@ public class UserVO extends User implements Serializable {
     /**
      * 账号
      */
-    @ApiModelProperty(value = "账号")
+    @ApiModelProperty(value = "用户账号")
     private String userAccount;
 
     /**
@@ -67,14 +66,14 @@ public class UserVO extends User implements Serializable {
     /**
      * 标签列表 json
      */
-    @ApiModelProperty(value = "标签列表 json")
+    @ApiModelProperty(value = "标签")
     private String tags;
 
     /**
      * 状态 0 - 正常
      */
-    @ApiModelProperty(value = "状态 0 - 正常")
-    private Integer userStatus;
+    @ApiModelProperty(value = "状态")
+    private Integer status;
 
     /**
      * 创建时间
@@ -88,11 +87,14 @@ public class UserVO extends User implements Serializable {
     @ApiModelProperty(value = "更新时间")
     private Date updateTime;
 
+    private String profile;
+
     /**
      * 用户角色 0 - 普通用户 1 - 管理员
      */
     @ApiModelProperty(value = "用户角色")
-    private Integer userRole;
+    private Integer role;
+
     /**
      * 是否关注
      */

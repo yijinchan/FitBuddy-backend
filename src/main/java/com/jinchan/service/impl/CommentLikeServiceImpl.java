@@ -7,7 +7,7 @@ import com.jinchan.mapper.CommentLikeMapper;
 import org.springframework.stereotype.Service;
 
 /**
-* @author Zhang Bridge
+* @author jinchan
 * @description 针对表【comment_like】的数据库操作Service实现
 * @createDate 2024-01-26 23:00:28
 */

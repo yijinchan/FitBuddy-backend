@@ -16,6 +16,7 @@ import lombok.EqualsAndHashCode;
 @ApiModel(value = "消息返回")
 public class MessageVO extends Message {
 
+    private static final long serialVersionUID = 439544534900405741L;
     /**
      * 从用户
      */

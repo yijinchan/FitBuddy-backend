@@ -2,10 +2,10 @@ package com.jinchan.utils;
 
 import com.jinchan.common.ErrorCode;
 import com.jinchan.exception.BusinessException;
-
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
@@ -13,14 +13,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import static com.jinchan.constant.SystemConstants.DEFAULT_BUFFER_SIZE;
+import static com.jinchan.constant.SystemConstants.FILE_END;
+
 /**
  * 文件工具
  * @author jinchan
  * @data 2024/2/1
  */
+@Component
+@Slf4j
 public class FileUtils {
 
-    @Value("${FitBuddy.img}")
     private static String basePath;
 
     public static String uploadFile(MultipartFile file) {
@@ -37,7 +41,10 @@ public class FileUtils {
         File dir = new File(System.getProperty("user.dir") + basePath);
         //如果文件夹不存在则新建文件夹
         if (!dir.exists()) {
-            dir.mkdir();
+            boolean mkdir = dir.mkdir();
+            if (!mkdir) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+            }
         }
         File localFile = new File(System.getProperty("user.dir") + basePath + originalFilename);
         try {
@@ -48,7 +55,10 @@ public class FileUtils {
         }
         byte[] imageStream = getImageStream(localFile);
         String fileName = QiNiuUtils.upload(imageStream);
-        localFile.delete();
+        boolean delete = localFile.delete();
+        if (!delete) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+        }
         //上传七牛云
         return fileName;
     }
@@ -59,17 +69,21 @@ public class FileUtils {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             fis = new FileInputStream(imageFile);
-            byte[] b = new byte[1024];
+            byte[] b = new byte[DEFAULT_BUFFER_SIZE];
             int n;
-            while ((n = fis.read(b)) != -1) {
+            while ((n = fis.read(b)) != FILE_END) {
                 bos.write(b, 0, n);
             }
             fis.close();
             bos.close();
             buffer = bos.toByteArray();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("exception message", e);
         }
         return buffer;
+    }
+    @Value("${fitbuddy.img}")
+    public void initBasePath(String b){
+        basePath=b;
     }
 }

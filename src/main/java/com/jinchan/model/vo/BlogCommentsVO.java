@@ -27,6 +27,9 @@ public class BlogCommentsVO extends BlogComments implements Serializable {
 
     @ApiModelProperty(value = "是否点赞")
     private Boolean isLiked;
-
+    /**
+     * 博客
+     */
+    @ApiModelProperty(value = "博客")
     private BlogVO blog;
 }

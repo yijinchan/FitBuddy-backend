@@ -10,6 +10,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
+import static com.jinchan.constant.SystemConstants.CROSS_ORIGIN_ALLOWED_TIME;
+
 /**
  * ClassName: WebMvcConfig
  * Package: com.jinchan.config
@@ -47,13 +49,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 //设置允许跨域请求的域名
                 //当**Credentials为true时，**Origin不能为星号，需为具体的ip地址【如果接口不带cookie,ip无需设成具体ip】
-                .allowedOrigins("http://localhost:5173", "http://127.0.0.1:5173","http://fitbuddy.top")//todo 自己的端口
+                .allowedOrigins("http://localhost:5173")//todo 自己的端口
                 //是否允许证书 不再默认开启
                 .allowCredentials(true)
                 //设置允许的方法
                 .allowedMethods("*")
                 //跨域允许时间
-                .maxAge(3600);
+                .maxAge(CROSS_ORIGIN_ALLOWED_TIME);
     }
 
 }

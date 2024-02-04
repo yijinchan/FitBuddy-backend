@@ -8,56 +8,71 @@ package com.jinchan.constant;
  * @Author jinchan
  * @Create 2024/1/18 19:52
  */
-public interface RedisConstants {
-    String LOGIN_USER_KEY = "super:login:token:";
+public final class RedisConstants {
+    private RedisConstants() {
+    }
 
-    Long LOGIN_USER_TTL = 15L;
+    public static final String LOGIN_USER_KEY = "fitbuddy:login:token:";
+
+    public static final Long LOGIN_USER_TTL = 15L;
     /**
      * 注册验证码键
      */
-    String REGISTER_CODE_KEY = "FitBuddy:register:";
+    public static final String REGISTER_CODE_KEY = "fitbuddy:register:";
     /**
      * 注册验证码过期时间
      */
-    Long REGISTER_CODE_TTL = 15L;
+    public static final Long REGISTER_CODE_TTL = 15L;
     /**
      * 用户更新电话键
      */
-    String USER_UPDATE_PHONE_KEY = "suer:user:update:phone:";
+    public static final String USER_UPDATE_PHONE_KEY = "fitbuddy:user:update:phone:";
     /**
      * 用户更新电话过期时间
      */
-    Long USER_UPDATE_PHONE_TTL = 15L;
+    public static final Long USER_UPDATE_PHONE_TTL = 15L;
     /**
      * 用户更新邮件键
      */
-    String USER_UPDATE_EMAIL_KEY = "suer:user:update:email:";
+    public static final String USER_UPDATE_EMAIL_KEY = "fitbuddy:user:update:email:";
     /**
      * 用户更新邮件过期时间
      */
-    Long USER_UPDATE_EMAIl_TTL = 15L;
+    public static final Long USER_UPDATE_EMAIL_TTL = 15L;
     /**
      * 用户忘记密码键
      */
-    String USER_FORGET_PASSWORD_KEY = "FitBuddy:user:forget:";
+    public static final String USER_FORGET_PASSWORD_KEY = "fitbuddy:user:forget:";
     /**
      * 用户忘记密码过期时间
      */
-    Long USER_FORGET_PASSWORD_TTL = 15L;
+    public static final Long USER_FORGET_PASSWORD_TTL = 15L;
     /**
      * 博客推送键
      */
-    String BLOG_FEED_KEY = "FitBuddy:feed:blog:";
+    public static final String BLOG_FEED_KEY = "fitbuddy:feed:blog:";
     /**
      * 新博文消息键
      */
-    String MESSAGE_BLOG_NUM_KEY = "FitBuddy:message:blog:num:";
+    public static final String MESSAGE_BLOG_NUM_KEY = "fitbuddy:message:blog:num:";
     /**
      * 新点赞消息键
      */
-    String MESSAGE_LIKE_NUM_KEY = "FitBuddy:message:like:num:";
+    public static final String MESSAGE_LIKE_NUM_KEY = "fitbuddy:message:like:num:";
     /**
      * 用户推荐缓存
      */
-    String USER_RECOMMEND_KEY = "FitBuddy:recommend:";
+    public static final String USER_RECOMMEND_KEY = "fitbuddy:recommend:";
+    /**
+     * 最小缓存随机时间
+     */
+    public static final int MINIMUM_CACHE_RANDOM_TIME = 2;
+    /**
+     * 最大缓存随机时间
+     */
+    public static final int MAXIMUM_CACHE_RANDOM_TIME = 3;
+    /**
+     * 缓存时间偏移
+     */
+    public static final int CACHE_TIME_OFFSET = 10;
 }

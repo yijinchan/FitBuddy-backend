@@ -4,6 +4,7 @@ package com.jinchan.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.jinchan.model.domain.User;
+import com.jinchan.model.request.UserRegisterRequest;
 import com.jinchan.model.request.UserUpdateRequest;
 import com.jinchan.model.vo.UserVO;
 
@@ -15,7 +16,7 @@ import java.util.List;
  * @description 针对表【user】的数据库操作Service
  */
 public interface UserService extends IService<User> {
-    long userRegister(String phone, String code, String userAccount, String userPassword, String checkPassword);
+    String userRegister(UserRegisterRequest userRegisterRequest, HttpServletRequest request);
 
     String userLogin(String userAccount, String userPassword, HttpServletRequest request);
 
@@ -51,4 +52,6 @@ public interface UserService extends IService<User> {
     void updatePassword(String phone, String code, String password, String confirmPassword);
 
     Page<UserVO> preMatchUser(long currentPage, String username, User loginUser);
+
+    String afterInsertUser(String key, long userId, HttpServletRequest request);
 }

@@ -1,5 +1,6 @@
 package com.jinchan.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.jinchan.common.BaseResponse;
 import com.jinchan.common.ErrorCode;
 import com.jinchan.common.ResultUtils;
@@ -143,12 +144,12 @@ public class BlogCommentsController {
     @ApiOperation(value = "获取我的评论")
     @ApiImplicitParams(
             {@ApiImplicitParam(name = "request", value = "request请求")})
-    public BaseResponse<List<BlogCommentsVO>> listMyBlogComments(HttpServletRequest request) {
+    public BaseResponse<Page<BlogCommentsVO>> listMyBlogComments(HttpServletRequest request,Long currentPage) {
         User loginUser = userService.getLoginUser(request);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        List<BlogCommentsVO> commentsVOList = blogCommentsService.listMyComments(loginUser.getId());
-        return ResultUtils.success(commentsVOList);
+        Page<BlogCommentsVO> blogCommentsVoPage = blogCommentsService.pageMyComments(loginUser.getId(), currentPage);
+        return ResultUtils.success(blogCommentsVoPage);
     }
 }

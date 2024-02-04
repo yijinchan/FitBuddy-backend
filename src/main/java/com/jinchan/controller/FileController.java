@@ -22,7 +22,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 
-import static com.jinchan.constant.SystemConstants.QiNiuUrl;
+import static com.jinchan.constant.SystemConstants.DEFAULT_BUFFER_SIZE;
+import static com.jinchan.constant.SystemConstants.FILE_END;
+
 
 /**
  * ClassName: FileController
@@ -40,12 +42,15 @@ public class FileController {
 
     /**
      * 基本路径
-     *///图片保存路径
-    @Value("${FitBuddy.img}")
+     */
+    @Value("${fitbuddy.img}")
     private String basePath;
 
     @Resource
     private UserService userService;
+
+    @Value("${fitbuddy.qiniu.url:null}")
+    private String QINIU_URL;
 
     @PostMapping("/upload")
     @ApiOperation(value = "文件上传")
@@ -61,7 +66,7 @@ public class FileController {
             throw new BusinessException(ErrorCode.NOT_LOGIN, "请登录");
         }
         String filename = FileUtils.uploadFile(file);
-        String fileUrl = QiNiuUrl + filename;
+        String fileUrl = QINIU_URL + filename;
         User user = new User();
         user.setId(loginUser.getId());
         user.setAvatarUrl(fileUrl);
@@ -89,9 +94,9 @@ public class FileController {
             response.setContentType("image/jpeg");
             int len = 0;
             //设置缓冲区大小
-            byte[] bytes = new byte[1024];
+            byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
             //将文件从输入流读到缓冲区，输出流读取缓冲区内容
-            while ((len = inputStream.read(bytes)) != -1) {
+            while ((len = inputStream.read(bytes)) != FILE_END) {
                 outputStream.write(bytes, 0, len);
                 outputStream.flush();
             }

@@ -1,10 +1,8 @@
 package com.jinchan.controller;
 
-import cn.hutool.core.lang.UUID;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.google.gson.Gson;
 import com.jinchan.common.BaseResponse;
 import com.jinchan.common.ErrorCode;
 import com.jinchan.common.ResultUtils;
@@ -16,6 +14,7 @@ import com.jinchan.model.request.UserRegisterRequest;
 import com.jinchan.model.request.UserUpdateRequest;
 import com.jinchan.model.vo.UserVO;
 import com.jinchan.service.UserService;
+import com.jinchan.utils.MessageUtils;
 import com.jinchan.utils.SMSUtils;
 import com.jinchan.utils.ValidateCodeUtils;
 import io.swagger.annotations.Api;
@@ -25,6 +24,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -36,14 +36,11 @@ import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.jinchan.constant.RedisConstants.*;
-import static com.jinchan.constant.SystemConstants.EMAIL_FROM;
-import static com.jinchan.constant.UserConstants.USER_LOGIN_STATE;
 
 
 /**
@@ -62,12 +59,8 @@ public class UserController {
     private StringRedisTemplate stringRedisTemplate;
     @Resource
     private JavaMailSender javaMailSender;  // 注入JavaMailSender对象，用于发送邮件
-//    /**
-//     * 布隆过滤器
-//     */
-//    @Resource
-//    private BloomFilter bloomFilter;
-
+    @Value("${spring.mail.username}")
+    private String EMAIL_FROM;
 
     /**
      * 短信发送
@@ -89,12 +82,12 @@ public class UserController {
         if (StringUtils.isBlank(phone)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Integer code = ValidateCodeUtils.generateValidateCode(6);
+        Integer code = ValidateCodeUtils.generateValidateCode();
         String key = REGISTER_CODE_KEY + phone;
         stringRedisTemplate.opsForValue().set(key, String.valueOf(code), REGISTER_CODE_TTL, TimeUnit.MINUTES);
         System.out.println(code);
         //todo 验证码
-//        SMSUtils.sendMessage(phone, String.valueOf(code));
+        MessageUtils.sendMessage(phone, String.valueOf(code));
         return ResultUtils.success("短信发送成功");
     }
 
@@ -106,11 +99,12 @@ public class UserController {
         if (StringUtils.isBlank(phone)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Integer code = ValidateCodeUtils.generateValidateCode(6);
+        Integer code = ValidateCodeUtils.generateValidateCode();
         String key = USER_UPDATE_PHONE_KEY + phone;
         stringRedisTemplate.opsForValue().set(key, String.valueOf(code), USER_UPDATE_PHONE_TTL, TimeUnit.MINUTES);
         System.out.println(code);
 //        SMSUtils.sendMessage(phone, String.valueOf(code));
+        MessageUtils.sendMessage(phone, String.valueOf(code));
         return ResultUtils.success("短信发送成功");
     }
 
@@ -127,7 +121,7 @@ public class UserController {
         if (StringUtils.isBlank(email)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Integer code = ValidateCodeUtils.generateValidateCode(6);
+        Integer code = ValidateCodeUtils.generateValidateCode();
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
         mimeMessageHelper.setFrom(new InternetAddress("FITBUDDY <" + EMAIL_FROM + ">"));
@@ -136,7 +130,7 @@ public class UserController {
         mimeMessageHelper.setText("我们收到了一项请求，要求更新您的邮箱地址为" + email + "。本次操作的验证码为：" + code + "。如果您并未请求此验证码，则可能是他人正在尝试修改以下 FITBUDDY 帐号：" + loginUser.getUserAccount() + "。请勿将此验证码转发给或提供给任何人。");
         javaMailSender.send(mimeMessage);
         String key = USER_UPDATE_EMAIL_KEY + email;
-        stringRedisTemplate.opsForValue().set(key, String.valueOf(code), USER_UPDATE_EMAIl_TTL, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(key, String.valueOf(code), USER_UPDATE_EMAIL_TTL, TimeUnit.MINUTES);
         System.out.println(code);
         return ResultUtils.success("ok");
     }
@@ -155,25 +149,7 @@ public class UserController {
         if (userRegisterRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        String phone = userRegisterRequest.getPhone();
-        String code = userRegisterRequest.getCode();
-        String account = userRegisterRequest.getUserAccount();
-        String password = userRegisterRequest.getUserPassword();
-        String checkPassword = userRegisterRequest.getCheckPassword();
-        if (StringUtils.isAnyBlank(phone, code, account, password, checkPassword)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不全");
-        }
-        long userId = userService.userRegister(phone, code, account, password, checkPassword);
-        User userInDatabase = userService.getById(userId);
-        User safetyUser = userService.getSafetyUser(userInDatabase);
-        String token = UUID.randomUUID().toString(true);
-        Gson gson = new Gson();
-        String userStr = gson.toJson(safetyUser);
-        request.getSession().setAttribute(USER_LOGIN_STATE, safetyUser);
-        request.getSession().setMaxInactiveInterval(900);
-        stringRedisTemplate.opsForValue().set(LOGIN_USER_KEY + token, userStr);
-        stringRedisTemplate.expire(LOGIN_USER_KEY + token, Duration.ofMinutes(15));
-//        bloomFilter.add(USER_BLOOM_PREFIX + userId);
+        String token = userService.userRegister(userRegisterRequest, request);
         return ResultUtils.success(token);
     }
 
@@ -238,9 +214,10 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "该手机号未绑定账号");
         } else {
             String key = USER_FORGET_PASSWORD_KEY + phone;
-            Integer code = ValidateCodeUtils.generateValidateCode(4);
+            Integer code = ValidateCodeUtils.generateValidateCode();
             SMSUtils.sendMessage(phone, String.valueOf(code));
-            System.out.println(code);
+            //todo
+            MessageUtils.sendMessage(phone, String.valueOf(code));
             stringRedisTemplate.opsForValue().set(key, String.valueOf(code), USER_FORGET_PASSWORD_TTL, TimeUnit.MINUTES);
             return ResultUtils.success(user.getUserAccount());
         }
@@ -305,10 +282,17 @@ public class UserController {
      */
     @GetMapping("/search/tags")
     @ApiOperation(value = "通过标签搜索用户")
-    @ApiImplicitParams({@ApiImplicitParam(name = "tagNameList", value = "标签列表")})
-    public BaseResponse<Page<User>> searchUsersByTags(@RequestParam(required = false) List<String> tagNameList, long currentPage) {
+    @ApiImplicitParams(
+            {@ApiImplicitParam(name = "tagNameList", value = "标签列表")})
+    public BaseResponse<Page<User>> searchUsersByTags(@RequestParam(required = false) List<String> tagNameList,
+                                                      long currentPage,
+                                                      HttpServletRequest request) {
         if (CollectionUtils.isEmpty(tagNameList)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "标签不能为空");
+        }
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
         Page<User> userList = userService.searchUsersByTags(tagNameList, currentPage);
         return ResultUtils.success(userList);
@@ -449,10 +433,6 @@ public class UserController {
             {@ApiImplicitParam(name = "id", value = "用户id"),
                     @ApiImplicitParam(name = "request", value = "request请求")})
     public BaseResponse<UserVO> getUserById(@PathVariable Long id, HttpServletRequest request) {
-//        boolean contains = bloomFilter.contains(USER_BLOOM_PREFIX + id);
-//        if (!contains) {
-//            return ResultUtils.success(null);
-//        }
         User loginUser = userService.getLoginUser(request);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);

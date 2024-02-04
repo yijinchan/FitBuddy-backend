@@ -7,7 +7,7 @@
     <resultMap id="BaseResultMap" type="com.jinchan.model.domain.Chat">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="fromId" column="from_id" jdbcType="BIGINT"/>
-            <result property="toid" column="toId" jdbcType="BIGINT"/>
+            <result property="toId" column="to_id" jdbcType="BIGINT"/>
             <result property="text" column="text" jdbcType="VARCHAR"/>
             <result property="chatType" column="chat_type" jdbcType="TINYINT"/>
             <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>

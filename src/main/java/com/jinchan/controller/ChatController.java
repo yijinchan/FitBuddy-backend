@@ -24,7 +24,7 @@ import static com.jinchan.constant.ChatConstants.*;
 /**
  * @author jinchan
  * @description: 聊天控制器
- * @date: 2024/02/05
+ * @date: 2024/02/01
  */
 @RestController
 @RequestMapping("/chat")
@@ -67,6 +67,7 @@ public class ChatController {
 
     /**
      * 获取群聊
+     *
      * @param chatRequest
      * @param request
      * @return BaseResponse<List < ChatMessageVO>>
@@ -81,7 +82,7 @@ public class ChatController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求有误");
         }
         User loginUser = userService.getLoginUser(request);
-        if (loginUser==null){
+        if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
         List<ChatMessageVO> teamChat = chatService.getTeamChat(chatRequest, TEAM_CHAT, loginUser);
@@ -90,6 +91,7 @@ public class ChatController {
 
     /**
      * 获取大厅聊天
+     *
      * @param request
      * @return
      */
@@ -99,7 +101,7 @@ public class ChatController {
             {@ApiImplicitParam(name = "request", value = "request请求")})
     public BaseResponse<List<ChatMessageVO>> getHallChat(HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
-        if (loginUser==null){
+        if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
         List<ChatMessageVO> hallChat = chatService.getHallChat(HALL_CHAT, loginUser);

@@ -1,5 +1,6 @@
 package com.jinchan.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.jinchan.common.BaseResponse;
 import com.jinchan.common.ErrorCode;
 import com.jinchan.common.ResultUtils;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 
 /**
  * ClassName: FollowController
@@ -52,13 +52,13 @@ public class FollowController {
     @ApiOperation(value = "获取粉丝")
     @ApiImplicitParams(
             {@ApiImplicitParam(name = "request", value = "request请求")})
-    public BaseResponse<List<UserVO>> listFans(HttpServletRequest request){
+    public BaseResponse<Page<UserVO>> listFans(HttpServletRequest request, String currentPage){
         User loginUser = userService.getLoginUser(request);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        List<UserVO> userList = followService.listFans(loginUser.getId());
-        return ResultUtils.success(userList);
+        Page<UserVO> userVoPage = followService.pageFans(loginUser.getId(), currentPage);
+        return ResultUtils.success(userVoPage);
     }
 
     /**
@@ -70,12 +70,12 @@ public class FollowController {
     @ApiOperation(value = "获取我关注的用户")
     @ApiImplicitParams(
             {@ApiImplicitParam(name = "request", value = "request请求")})
-    public BaseResponse<List<UserVO>> listMyFollow(HttpServletRequest request){
+    public BaseResponse<Page<UserVO>> listMyFollow(HttpServletRequest request, String currentPage){
         User loginUser = userService.getLoginUser(request);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        List<UserVO> userVOList = followService.listMyFollow(loginUser.getId());
-        return ResultUtils.success(userVOList);
+        Page<UserVO> userVoPage = followService.pageMyFollow(loginUser.getId(),currentPage);
+        return ResultUtils.success(userVoPage);
     }
 }

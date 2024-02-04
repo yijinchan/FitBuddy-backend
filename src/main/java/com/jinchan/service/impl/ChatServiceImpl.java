@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.jinchan.constant.ChatConstants.*;
+import static com.jinchan.constant.RedisConstants.*;
 import static com.jinchan.constant.UserConstants.ADMIN_ROLE;
 
 /**
@@ -87,15 +88,23 @@ public class ChatServiceImpl extends ServiceImpl<ChatMapper, Chat>
     }
 
     @Override
-    public void saveCache(String redisKey, String id, List<ChatMessageVO> ChatMessageVOs) {
+    public void saveCache(String redisKey, String id, List<ChatMessageVO> chatMessageVOS) {
         try {
             ValueOperations<String, Object> valueOperations = redisTemplate.opsForValue();
             // 解决缓存雪崩
-            int i = RandomUtil.randomInt(2, 3);
+            int i = RandomUtil.randomInt(MINIMUM_CACHE_RANDOM_TIME, MAXIMUM_CACHE_RANDOM_TIME);
             if (redisKey.equals(CACHE_CHAT_HALL)) {
-                valueOperations.set(redisKey, ChatMessageVOs, 2 + i / 10, TimeUnit.MINUTES);
+                valueOperations.set(
+                        redisKey,
+                        chatMessageVOS,
+                        MINIMUM_CACHE_RANDOM_TIME + i / CACHE_TIME_OFFSET,
+                        TimeUnit.MINUTES);
             } else {
-                valueOperations.set(redisKey + id, ChatMessageVOs, 2 + i / 10, TimeUnit.MINUTES);
+                valueOperations.set(
+                        redisKey + id,
+                        chatMessageVOS,
+                        MINIMUM_CACHE_RANDOM_TIME + i / CACHE_TIME_OFFSET,
+                        TimeUnit.MINUTES);
             }
         } catch (Exception e) {
             log.error("redis set key error");
@@ -159,15 +168,15 @@ public class ChatServiceImpl extends ServiceImpl<ChatMapper, Chat>
     public List<ChatMessageVO> getHallChat(int chatType, User loginUser) {
         List<ChatMessageVO> chatRecords = getCache(CACHE_CHAT_HALL, String.valueOf(loginUser.getId()));
         if (chatRecords != null) {
-            List<ChatMessageVO> ChatMessageVOs = checkIsMyMessage(loginUser, chatRecords);
-            saveCache(CACHE_CHAT_HALL, String.valueOf(loginUser.getId()), ChatMessageVOs);
-            return ChatMessageVOs;
+            List<ChatMessageVO> chatMessageVOS = checkIsMyMessage(loginUser, chatRecords);
+            saveCache(CACHE_CHAT_HALL, String.valueOf(loginUser.getId()), chatMessageVOS);
+            return chatMessageVOS;
         }
         LambdaQueryWrapper<Chat> chatLambdaQueryWrapper = new LambdaQueryWrapper<>();
         chatLambdaQueryWrapper.eq(Chat::getChatType, chatType);
-        List<ChatMessageVO> ChatMessageVOs = returnMessage(loginUser, null, chatLambdaQueryWrapper);
-        saveCache(CACHE_CHAT_HALL, String.valueOf(loginUser.getId()), ChatMessageVOs);
-        return ChatMessageVOs;
+        List<ChatMessageVO> chatMessageVOS = returnMessage(loginUser, null, chatLambdaQueryWrapper);
+        saveCache(CACHE_CHAT_HALL, String.valueOf(loginUser.getId()), chatMessageVOS);
+        return chatMessageVOS;
     }
 
     private List<ChatMessageVO> checkIsMyMessage(User loginUser, List<ChatMessageVO> chatRecords) {

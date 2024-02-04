@@ -1,6 +1,7 @@
 package com.jinchan.service;
 
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.jinchan.model.domain.Message;
 import com.jinchan.model.vo.BlogVO;
@@ -19,4 +20,5 @@ public interface MessageService extends IService<Message> {
     List<MessageVO> getLike(Long userId);
     List<BlogVO> getUserBlog(Long userId);
     Boolean hasNewMessage(Long userId);
+    Page<MessageVO> pageLike(Long id, Long currentPage);
 }

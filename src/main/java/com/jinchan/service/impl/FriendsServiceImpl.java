@@ -23,16 +23,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.jinchan.constant.FriendConstants.*;
-import static com.jinchan.constant.RedissonConstant.APPLY_LOCK;
+import static com.jinchan.constant.RedissonConstant.*;
 import static com.jinchan.utils.StringUtils.stringJsonListToLongSet;
 
 /**
@@ -50,19 +47,11 @@ public class FriendsServiceImpl extends ServiceImpl<FriendsMapper, Friends>
     private RedissonClient redissonClient;
     @Override
     public boolean addFriendRecords(User loginUser, FriendAddRequest friendAddRequest) {
-        if(StringUtils.isAnyBlank(friendAddRequest.getRemark()) && friendAddRequest.getRemark().length() >120){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "备注信息不能为空且长度不能超过120");
-        }
-        if(ObjectUtils.anyNull(loginUser.getId(),friendAddRequest.getReceiveId())){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求有误");
-        }
-        if(loginUser.getId().equals(friendAddRequest.getReceiveId())){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "不能添加自己为好友");
-        }
+        validateRequest(loginUser, friendAddRequest);
         RLock lock = redissonClient.getLock(APPLY_LOCK + loginUser.getId());
         try {
             // 抢到锁并执行
-            if (lock.tryLock(0, -1, TimeUnit.MILLISECONDS)) {
+            if (lock.tryLock(DEFAULT_WAIT_TIME, DEFAULT_LEASE_TIME, TimeUnit.MILLISECONDS)) {
                 // 2.条数大于等于1 就不能再添加
                 LambdaQueryWrapper<Friends> friendsLambdaQueryWrapper = new LambdaQueryWrapper<>();
                 friendsLambdaQueryWrapper.eq(Friends::getReceiveId, friendAddRequest.getReceiveId());
@@ -96,6 +85,28 @@ public class FriendsServiceImpl extends ServiceImpl<FriendsMapper, Friends>
         }
         return false;
     }
+    /**
+     * 校验添加好友请求
+     *
+     * @param loginUser        登录用户
+     * @param friendAddRequest 好友添加请求
+     */
+    public void validateRequest(User loginUser, FriendAddRequest friendAddRequest) {
+        if (StringUtils.isNotBlank(
+                friendAddRequest.getRemark())
+                &&
+                friendAddRequest.getRemark().length() > MAXIMUM_REMARK_LENGTH) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "申请备注最多120个字符");
+        }
+        if (ObjectUtils.anyNull(loginUser.getId(), friendAddRequest.getReceiveId())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "添加失败");
+        }
+        // 1.添加的不能是自己
+        if (Objects.equals(loginUser.getId(), friendAddRequest.getReceiveId())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "不能添加自己为好友");
+        }
+    }
+
     @Override
     public List<FriendsRecordVO> obtainFriendApplicationRecords(User loginUser) {
         // 查询出当前用户所有申请、同意记录
@@ -177,7 +188,7 @@ public class FriendsServiceImpl extends ServiceImpl<FriendsMapper, Friends>
         }
         AtomicBoolean flag = new AtomicBoolean(false);
         collect.forEach(friend -> {
-            if (DateUtil.between(new Date(), friend.getCreateTime(), DateUnit.DAY) >= 3 || friend.getStatus() == EXPIRED_STATUS) {
+            if (DateUtil.between(new Date(), friend.getCreateTime(), DateUnit.DAY) >= MAXIMUM_APPLY_TIME || friend.getStatus() == EXPIRED_STATUS) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "该申请已过期");
             }
             // 1. 分别查询receiveId和fromId的用户，更改userIds中的数据

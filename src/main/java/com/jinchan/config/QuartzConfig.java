@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class QuartzConfig {
 
-    @Value("${FitBuddy.job}")
+    @Value("${fitbuddy.job}")
     private String jobTriggerTime;
 
     @Bean

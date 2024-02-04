@@ -2,6 +2,7 @@ package com.jinchan.job;
 
 import com.jinchan.model.domain.Team;
 import com.jinchan.service.TeamService;
+import lombok.extern.log4j.Log4j2;
 import org.quartz.JobExecutionContext;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -16,8 +17,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.jinchan.constant.RedissonConstant.DISBAND_EXPIRED_TEAM_LOCK;
+import static com.jinchan.constant.RedissonConstant.*;
 
+@Log4j2
 public class DisbandExpiredTeam extends QuartzJobBean {
     @Resource
     private RedissonClient redissonClient;
@@ -29,8 +31,8 @@ public class DisbandExpiredTeam extends QuartzJobBean {
     protected void executeInternal(@NonNull JobExecutionContext context) {
         RLock lock = redissonClient.getLock(DISBAND_EXPIRED_TEAM_LOCK);
         try {
-            if (lock.tryLock(0, -1, TimeUnit.MICROSECONDS)) {
-                System.out.println("开始删除过期队伍");
+            if (lock.tryLock(DEFAULT_WAIT_TIME, DEFAULT_LEASE_TIME, TimeUnit.MICROSECONDS)) {
+                log.info("开始删除过期队伍");
                 long begin = System.currentTimeMillis();
                 List<Team> teamList = teamService.list();
                 ZoneId zoneId = ZoneId.systemDefault();
@@ -46,13 +48,13 @@ public class DisbandExpiredTeam extends QuartzJobBean {
                     }
                 }
                 long end = System.currentTimeMillis();
-                System.out.println("删除过期队伍结束，耗时" + (end - begin));
+                log.info("删除过期队伍结束，耗时" + (end - begin));
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
             if (lock.isHeldByCurrentThread()) {
-                System.out.println("unLock: " + Thread.currentThread().getId());
+                log.info("unLock: " + Thread.currentThread().getId());
                 lock.unlock();
             }
         }
