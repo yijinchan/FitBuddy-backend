@@ -1,5 +1,6 @@
 package com.jinchan.model.vo;
 
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -11,6 +12,7 @@ import java.io.Serializable;
  * @date 2024/2/1
  */
 @Data
+@ApiModel(value = "聊天消息返回")
 public class ChatMessageVO implements Serializable {
 
     private static final long serialVersionUID = 9189925650007592819L;

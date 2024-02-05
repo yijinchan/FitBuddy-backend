@@ -20,5 +20,5 @@ public class TeamQuitRequest implements Serializable {
 
     private static final long serialVersionUID = -4869820851943218319L;
     @ApiModelProperty(value = "队伍id")
-    private long teamId;
+    private Long teamId;
 }

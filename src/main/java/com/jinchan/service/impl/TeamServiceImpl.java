@@ -49,7 +49,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
     private FollowService followService;
 
     @Value("${fitbuddy.qiniu.url:null}")
-    private String QINIU_URL;
+    private String qiniuUrl;
     /**
      * 加入团队
      *
@@ -556,7 +556,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements Te
         String fileName = FileUtils.uploadFile(image);
         Team temp = new Team();
         temp.setId(team.getId());
-        temp.setCoverImage(QINIU_URL + fileName);
+        temp.setCoverImage(qiniuUrl + fileName);
         this.updateById(temp);
     }
 

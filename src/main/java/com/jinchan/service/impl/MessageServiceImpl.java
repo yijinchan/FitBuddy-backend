@@ -147,15 +147,16 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
         if (Boolean.TRUE.equals(hasLike)) {
             String likeNum = stringRedisTemplate.opsForValue().get(likeNumKey);
             assert likeNum != null;
-            return Long.parseLong(likeNum) > 0;
-        } else {
-            String blogNumKey = MESSAGE_BLOG_NUM_KEY + userId;
-            Boolean hasBlog = stringRedisTemplate.hasKey(blogNumKey);
-            if (Boolean.TRUE.equals(hasBlog)) {
-                String blogNum = stringRedisTemplate.opsForValue().get(blogNumKey);
-                assert blogNum != null;
-                return Long.parseLong(blogNum) > 0;
+            if (Long.parseLong(likeNum) > 0) {
+                return true;
             }
+        }
+        String blogNumKey = MESSAGE_BLOG_NUM_KEY + userId;
+        Boolean hasBlog = stringRedisTemplate.hasKey(blogNumKey);
+        if (Boolean.TRUE.equals(hasBlog)) {
+            String blogNum = stringRedisTemplate.opsForValue().get(blogNumKey);
+            assert blogNum != null;
+            return Long.parseLong(blogNum) > 0;
         }
         return false;
     }

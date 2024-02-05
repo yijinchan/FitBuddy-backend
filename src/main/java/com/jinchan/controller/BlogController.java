@@ -31,7 +31,7 @@ import javax.servlet.http.HttpServletRequest;
  * @Create 2024/1/23 17:27
  */
 @RestController
-@RequestMapping("blog")
+@RequestMapping("/blog")
 @Api(tags = "博文管理模块")
 @Log4j2
 public class BlogController {
@@ -90,13 +90,10 @@ public class BlogController {
     @ApiImplicitParams(
             {@ApiImplicitParam(name = "id", value = "博文id"),
                     @ApiImplicitParam(name = "request", value = "request请求")})
-    public BaseResponse<String> likeBlog(@PathVariable Long id, HttpServletRequest request) {
+    public BaseResponse<String> likeBlog(@PathVariable long id, HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
-        }
-        if (id == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         blogService.likeBlog(id, loginUser.getId());
         return ResultUtils.success("成功");

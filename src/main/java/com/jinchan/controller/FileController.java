@@ -49,8 +49,8 @@ public class FileController {
     @Resource
     private UserService userService;
 
-    @Value("${fitbuddy.qiniu.url:null}")
-    private String QINIU_URL;
+    @Value("${fitbuddy.qiniu.url}")
+    private String qiniuUrl;
 
     @PostMapping("/upload")
     @ApiOperation(value = "文件上传")
@@ -66,7 +66,7 @@ public class FileController {
             throw new BusinessException(ErrorCode.NOT_LOGIN, "请登录");
         }
         String filename = FileUtils.uploadFile(file);
-        String fileUrl = QINIU_URL + filename;
+        String fileUrl = qiniuUrl + filename;
         User user = new User();
         user.setId(loginUser.getId());
         user.setAvatarUrl(fileUrl);

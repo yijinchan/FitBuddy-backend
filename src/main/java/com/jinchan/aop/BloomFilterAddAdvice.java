@@ -18,7 +18,7 @@ import static com.jinchan.constant.BloomFilterConstants.*;
  */
 @Component
 @Aspect
-@ConditionalOnProperty(prefix = "FitBuddy", name = "enable-bloom-filter", havingValue = "true")
+@ConditionalOnProperty(prefix = "fitbuddy", name = "enable-bloom-filter", havingValue = "true")
 @Log4j2
 public class BloomFilterAddAdvice {
     @Resource

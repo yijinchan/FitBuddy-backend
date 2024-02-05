@@ -3,6 +3,7 @@ package com.jinchan.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.jinchan.model.domain.Chat;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
 * @author jinchan
@@ -10,6 +11,7 @@ import com.jinchan.model.domain.Chat;
 * @createDate 2024-01-31 18:29:35
 * @Entity generator.domain.Chat
 */
+@Mapper
 public interface ChatMapper extends BaseMapper<Chat> {
 
 }

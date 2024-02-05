@@ -94,7 +94,7 @@ public class TeamController {
     @ApiOperation(value = "根据id查询队伍")
     @ApiImplicitParams({@ApiImplicitParam(name = "id", value = "队伍id")})
     public BaseResponse<TeamVO> getTeamById(@PathVariable Long id, HttpServletRequest request) {
-        if (id == null || id <= 0) {
+        if (id == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
@@ -113,15 +113,8 @@ public class TeamController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
-        Page<TeamVO> teamVOPage = teamService.listTeams(currentPage, teamQueryRequest, userService.isAdmin(loginUser));
-        List<TeamVO> teamList = teamVOPage.getRecords();
-        teamList.forEach((team) -> {
-            LambdaQueryWrapper<UserTeam> userTeamLambdaQueryWrapper = new LambdaQueryWrapper<>();
-            userTeamLambdaQueryWrapper.eq(UserTeam::getTeamId, team.getId());
-            long hasJoinNum = userTeamService.count(userTeamLambdaQueryWrapper);
-            team.setHasJoinNum(hasJoinNum);
-        });
-        Page<TeamVO> finalPage = getTeamHasJoinNum(teamVOPage);
+        Page<TeamVO> teamVoPage = teamService.listTeams(currentPage, teamQueryRequest, userService.isAdmin(loginUser));
+        Page<TeamVO> finalPage = getTeamHasJoinNum(teamVoPage);
         return getUserJoinedList(loginUser, finalPage);
     }
 
@@ -347,8 +340,7 @@ public class TeamController {
             // 遍历队伍列表，设置队伍是否已加入的标志
             teamList.forEach(team -> team.setHasJoin(joinedTeamIdList.contains(team.getId())));
             teamPage.setRecords(teamList);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ignored) {
         }
         // 返回队伍列表及状态信息
         return ResultUtils.success(teamPage);

@@ -15,29 +15,30 @@ import java.util.Set;
 * @createDate 2024-01-31 21:53:01
 */
 public interface FriendsService extends IService<Friends> {
+
     /**
      * 好友申请
      *
-     * @param loginUser
-     * @param friendAddRequest
-     * @return
+     * @param loginUser        登录用户
+     * @param friendAddRequest 好友添加请求
+     * @return boolean
      */
     boolean addFriendRecords(User loginUser, FriendAddRequest friendAddRequest);
 
     /**
      * 查询出所有申请、同意记录
      *
-     * @param loginUser
-     * @return
+     * @param loginUser 登录用户
+     * @return {@link List}<{@link FriendsRecordVO}>
      */
     List<FriendsRecordVO> obtainFriendApplicationRecords(User loginUser);
 
     /**
-     * 同意好友
+     * 同意申请
      *
-     * @param loginUser
-     * @param fromId
-     * @return
+     * @param loginUser 登录用户
+     * @param fromId    从…起id
+     * @return boolean
      */
     boolean agreeToApply(User loginUser, Long fromId);
 
@@ -46,32 +47,32 @@ public interface FriendsService extends IService<Friends> {
      *
      * @param id        申请记录id
      * @param loginUser 登录用户
-     * @return
+     * @return boolean
      */
     boolean canceledApply(Long id, User loginUser);
 
     /**
      * 获取我申请的记录
      *
-     * @param loginUser
-     * @return
+     * @param loginUser 登录用户
+     * @return {@link List}<{@link FriendsRecordVO}>
      */
     List<FriendsRecordVO> getMyRecords(User loginUser);
 
     /**
      * 获取未读记录条数
      *
-     * @param loginUser
-     * @return
+     * @param loginUser 登录用户
+     * @return int
      */
     int getRecordCount(User loginUser);
 
     /**
      * 读取纪录
      *
-     * @param loginUser
-     * @param ids
-     * @return
+     * @param loginUser 登录用户
+     * @param ids       ids
+     * @return boolean
      */
     boolean toRead(User loginUser, Set<Long> ids);
 }

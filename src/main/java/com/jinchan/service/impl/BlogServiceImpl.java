@@ -57,7 +57,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     @Resource
     private RedissonClient redissonClient;
     @Value("${fitbuddy.qiniu.url:null}")
-    private String QINIU_URL;
+    private String qiniuUrl;
     @Override
     public Long addBlog(BlogAddRequest blogAddRequest, User loginUser) {
         Blog blog = new Blog();
@@ -120,7 +120,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
                 continue;
             }
             String[] imgStr = images.split(",");
-            blogVO.setCoverImage(QINIU_URL + imgStr[0]);
+            blogVO.setCoverImage(qiniuUrl + imgStr[0]);
         }
         blogVoPage.setRecords(blogVOList);
         return blogVoPage;
@@ -221,14 +221,12 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     public Page<BlogVO> pageBlog(long currentPage, String title, Long userId) {
         LambdaQueryWrapper<Blog> blogLambdaQueryWrapper = new LambdaQueryWrapper<>();
         blogLambdaQueryWrapper.like(StringUtils.isNotBlank(title), Blog::getTitle, title);
+        blogLambdaQueryWrapper.orderBy(true, false, Blog::getCreateTime);
         Page<Blog> blogPage = this.page(new Page<>(currentPage, PAGE_SIZE), blogLambdaQueryWrapper);
-
         Page<BlogVO> blogVoPage = new Page<>();
         BeanUtils.copyProperties(blogPage, blogVoPage);
         List<BlogVO> blogVOList = blogPage.getRecords().stream().map((blog) -> {
-            // 创建一个新的博文视图对象
             BlogVO blogVO = new BlogVO();
-            // 将博文对象的属性复制到博文视图对象中
             BeanUtils.copyProperties(blog, blogVO);
             if (userId != null) {
                 LambdaQueryWrapper<BlogLike> blogLikeLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -244,9 +242,8 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
                 continue;
             }
             String[] imgStrs = images.split(",");
-            blogVO.setCoverImage(QINIU_URL + imgStrs[0]);
+            blogVO.setCoverImage(qiniuUrl + imgStrs[0]);
         }
-        // 将博文视图对象列表设置为博文视图对象分页页的记录
         blogVoPage.setRecords(blogVOList);
         return blogVoPage;
     }
@@ -282,7 +279,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         String[] imgStrs = images.split(",");
         ArrayList<String> imgStrList = new ArrayList<>();
         for (String imgStr : imgStrs) {
-            imgStrList.add(QINIU_URL + imgStr);
+            imgStrList.add(qiniuUrl + imgStr);
         }
         String imgStr = StringUtils.join(imgStrList, ",");
         blogVO.setImages(imgStr);

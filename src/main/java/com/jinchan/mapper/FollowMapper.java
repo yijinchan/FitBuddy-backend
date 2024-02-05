@@ -2,6 +2,7 @@ package com.jinchan.mapper;
 
 import com.jinchan.model.domain.Follow;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
 * @author jinchan
@@ -9,6 +10,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @createDate 2024-01-27 16:33:20
 * @Entity generator.domain.Follow
 */
+@Mapper
 public interface FollowMapper extends BaseMapper<Follow> {
 
 }

@@ -1,12 +1,10 @@
 package com.jinchan.constant;
 
 /**
- * ClassName: RedisConstants
- * Package: com.jinchan.constant
- * Description:
+ * Redis常量
  *
- * @Author jinchan
- * @Create 2024/1/18 19:52
+ * @author jinchan
+ * @date 2024/1/18
  */
 public final class RedisConstants {
     private RedisConstants() {
@@ -26,7 +24,7 @@ public final class RedisConstants {
     /**
      * 用户更新电话键
      */
-    public static final String USER_UPDATE_PHONE_KEY = "fitbuddy:user:update:phone:";
+    public static final String USER_UPDATE_PHONE_KEY = "suer:user:update:phone:";
     /**
      * 用户更新电话过期时间
      */
@@ -34,7 +32,7 @@ public final class RedisConstants {
     /**
      * 用户更新邮件键
      */
-    public static final String USER_UPDATE_EMAIL_KEY = "fitbuddy:user:update:email:";
+    public static final String USER_UPDATE_EMAIL_KEY = "suer:user:update:email:";
     /**
      * 用户更新邮件过期时间
      */
@@ -63,6 +61,7 @@ public final class RedisConstants {
      * 用户推荐缓存
      */
     public static final String USER_RECOMMEND_KEY = "fitbuddy:recommend:";
+
     /**
      * 最小缓存随机时间
      */

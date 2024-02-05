@@ -8,6 +8,7 @@ import com.jinchan.common.ErrorCode;
  * @data 2024/2/1
  */
 public class BusinessException extends RuntimeException {
+    private static final long serialVersionUID = -7999891598058747554L;
     /**
      * 错误码
      */

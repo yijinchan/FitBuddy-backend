@@ -15,7 +15,6 @@ import com.jinchan.model.request.UserUpdateRequest;
 import com.jinchan.model.vo.UserVO;
 import com.jinchan.service.UserService;
 import com.jinchan.utils.MessageUtils;
-import com.jinchan.utils.SMSUtils;
 import com.jinchan.utils.ValidateCodeUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -41,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.jinchan.constant.RedisConstants.*;
+import static com.jinchan.constant.SystemConstants.PAGE_SIZE;
+import static com.jinchan.constant.UserConstants.ADMIN_ROLE;
 
 
 /**
@@ -60,7 +61,7 @@ public class UserController {
     @Resource
     private JavaMailSender javaMailSender;  // 注入JavaMailSender对象，用于发送邮件
     @Value("${spring.mail.username}")
-    private String EMAIL_FROM;
+    private String userFrom;
 
     /**
      * 短信发送
@@ -74,18 +75,13 @@ public class UserController {
             {@ApiImplicitParam(name = "phone", value = "手机号"),
                     @ApiImplicitParam(name = "request", value = "request请求")}
     )
-    public BaseResponse<String> sendMessage(String phone, HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
-        if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_LOGIN);
-        }
+    public BaseResponse<String> sendMessage(String phone) {
         if (StringUtils.isBlank(phone)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Integer code = ValidateCodeUtils.generateValidateCode();
         String key = REGISTER_CODE_KEY + phone;
         stringRedisTemplate.opsForValue().set(key, String.valueOf(code), REGISTER_CODE_TTL, TimeUnit.MINUTES);
-        System.out.println(code);
         //todo 验证码
         MessageUtils.sendMessage(phone, String.valueOf(code));
         return ResultUtils.success("短信发送成功");
@@ -95,15 +91,17 @@ public class UserController {
     @ApiOperation(value = "发送手机号更新验证码")
     @ApiImplicitParams(
             {@ApiImplicitParam(name = "phone", value = "手机号")})
-    public BaseResponse<String> sendMessage(String phone) {
+    public BaseResponse<String> sendPhoneUpdateMessage(String phone, HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
         if (StringUtils.isBlank(phone)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Integer code = ValidateCodeUtils.generateValidateCode();
         String key = USER_UPDATE_PHONE_KEY + phone;
         stringRedisTemplate.opsForValue().set(key, String.valueOf(code), USER_UPDATE_PHONE_TTL, TimeUnit.MINUTES);
-        System.out.println(code);
-//        SMSUtils.sendMessage(phone, String.valueOf(code));
         MessageUtils.sendMessage(phone, String.valueOf(code));
         return ResultUtils.success("短信发送成功");
     }
@@ -124,14 +122,14 @@ public class UserController {
         Integer code = ValidateCodeUtils.generateValidateCode();
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-        mimeMessageHelper.setFrom(new InternetAddress("FITBUDDY <" + EMAIL_FROM + ">"));
+        mimeMessageHelper.setFrom(new InternetAddress("FITBUDDY <" + userFrom + ">"));
         mimeMessageHelper.setTo(email);
         mimeMessageHelper.setSubject("FITBUDDY 验证码");
         mimeMessageHelper.setText("我们收到了一项请求，要求更新您的邮箱地址为" + email + "。本次操作的验证码为：" + code + "。如果您并未请求此验证码，则可能是他人正在尝试修改以下 FITBUDDY 帐号：" + loginUser.getUserAccount() + "。请勿将此验证码转发给或提供给任何人。");
         javaMailSender.send(mimeMessage);
         String key = USER_UPDATE_EMAIL_KEY + email;
         stringRedisTemplate.opsForValue().set(key, String.valueOf(code), USER_UPDATE_EMAIL_TTL, TimeUnit.MINUTES);
-        System.out.println(code);
+        log.info(String.valueOf(code));        System.out.println(code);
         return ResultUtils.success("ok");
     }
 
@@ -215,10 +213,11 @@ public class UserController {
         } else {
             String key = USER_FORGET_PASSWORD_KEY + phone;
             Integer code = ValidateCodeUtils.generateValidateCode();
-            SMSUtils.sendMessage(phone, String.valueOf(code));
-            //todo
             MessageUtils.sendMessage(phone, String.valueOf(code));
-            stringRedisTemplate.opsForValue().set(key, String.valueOf(code), USER_FORGET_PASSWORD_TTL, TimeUnit.MINUTES);
+            stringRedisTemplate.opsForValue().set(key,
+                    String.valueOf(code),
+                    USER_FORGET_PASSWORD_TTL,
+                    TimeUnit.MINUTES);
             return ResultUtils.success(user.getUserAccount());
         }
     }
@@ -310,21 +309,21 @@ public class UserController {
     @ApiImplicitParams(
             {@ApiImplicitParam(name = "username", value = "用户名"),
                     @ApiImplicitParam(name = "request", value = "request请求")})
-    public BaseResponse<List<User>> searchUsersByUserName(String username, HttpServletRequest request) {
+    public BaseResponse<Page<User>> searchUsersByUserName(String username, Long currentPage, HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        if (!userService.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        if (!StringUtils.isEmpty(username)) {
+        if (StringUtils.isNotBlank(username)) {
             queryWrapper.like("username", username);
         }
-        List<User> userList = userService.list(queryWrapper);
-        List<User> lsit = userList.stream().map(user -> userService.getSafetyUser(user)).collect(Collectors.toList());
-        return ResultUtils.success(lsit);
+        Page<User> userPage = userService.page(new Page<>(currentPage, PAGE_SIZE), queryWrapper);
+        List<User> safetyUserList = userPage.getRecords()
+                .stream().map(user -> userService.getSafetyUser(user))
+                .collect(Collectors.toList());
+        userPage.setRecords(safetyUserList);
+        return ResultUtils.success(userPage);
     }
 
     /**
@@ -334,7 +333,7 @@ public class UserController {
      * @param request       request请求
      * @return 更新成功返回1，更新失败抛出BusinessException
      */
-    @PostMapping("/update")
+    @PutMapping("/update")
     @ApiOperation(value = "更新用户")
     @ApiImplicitParams(
             {@ApiImplicitParam(name = "user", value = "用户更新请求参数"),
@@ -366,30 +365,37 @@ public class UserController {
     }
 
     /**
-     * 删除用户
+     * 管理员更新用户
      *
-     * @param id      用户id
-     * @param request request请求
-     * @return 删除结果
+     * @param updateRequest 更新请求
+     * @param request       请求
+     * @return {@link BaseResponse}<{@link String}>
      */
-    @PostMapping("/delete")
-    @ApiOperation(value = "删除用户")
+    @PutMapping("/admin/update")
+    @ApiOperation(value = "管理员更新用户")
     @ApiImplicitParams(
-            {@ApiImplicitParam(name = "id", value = "用户id"),
+            {@ApiImplicitParam(name = "user", value = "用户更新请求参数"),
                     @ApiImplicitParam(name = "request", value = "request请求")})
-    public BaseResponse<Boolean> deleteUser(@RequestBody long id, HttpServletRequest request) {
+    public BaseResponse<String> adminUpdateUser(@RequestBody UserUpdateRequest updateRequest,
+                                                HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        if (!userService.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH);
-        }
-        if (id <= 0) {
+        if (updateRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        boolean b = userService.removeById(id);
-        return ResultUtils.success(b);
+        if (!loginUser.getRole().equals(ADMIN_ROLE)) {
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        User user = new User();
+        BeanUtils.copyProperties(updateRequest, user);
+        boolean success = userService.updateById(user);
+        if (success) {
+            return ResultUtils.success("ok");
+        } else {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+        }
     }
 
     /**

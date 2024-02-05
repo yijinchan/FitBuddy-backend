@@ -13,7 +13,9 @@ import static com.jinchan.constant.SystemConstants.MINIMUM_VERIFICATION_CODE_NUM
  * @Author jinchan
  * @Create 2024/1/22 14:00
  */
-public class ValidateCodeUtils {
+public final class ValidateCodeUtils {
+    private ValidateCodeUtils() {
+    }
     /**
      * 生成验证代码
      *

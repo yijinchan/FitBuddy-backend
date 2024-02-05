@@ -14,6 +14,7 @@ import com.jinchan.model.request.FriendAddRequest;
 import com.jinchan.model.vo.FriendsRecordVO;
 import com.jinchan.service.FriendsService;
 import com.jinchan.service.UserService;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RLock;
@@ -38,6 +39,7 @@ import static com.jinchan.utils.StringUtils.stringJsonListToLongSet;
 * @createDate 2024-01-31 21:53:01
 */
 @Service
+@Log4j2
 public class FriendsServiceImpl extends ServiceImpl<FriendsMapper, Friends>
     implements FriendsService{
 
@@ -79,7 +81,7 @@ public class FriendsServiceImpl extends ServiceImpl<FriendsMapper, Friends>
         } finally {
             // 只能释放自己的锁
             if (lock.isHeldByCurrentThread()) {
-                System.out.println("unLock: " + Thread.currentThread().getId());
+                log.info("unLock: " + Thread.currentThread().getId());
                 lock.unlock();
             }
         }

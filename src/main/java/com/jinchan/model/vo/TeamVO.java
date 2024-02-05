@@ -1,6 +1,5 @@
 package com.jinchan.model.vo;
 
-import com.jinchan.model.domain.Team;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -18,7 +17,7 @@ import java.util.Date;
  */
 @Data
 @ApiModel(value = "队伍用户返回")
-public class TeamVO extends Team implements Serializable {
+public class TeamVO implements Serializable {
     private static final long serialVersionUID = 2625797734453117209L;
 
     /**
@@ -59,7 +58,7 @@ public class TeamVO extends Team implements Serializable {
     /**
      * 用户id
      */
-    @ApiModelProperty(value = "用户id")
+    @ApiModelProperty(value = "队长id")
     private Long userId;
 
     /**

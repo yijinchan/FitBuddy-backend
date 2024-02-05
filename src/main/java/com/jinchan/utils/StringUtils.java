@@ -12,7 +12,9 @@ import java.util.Set;
  * @author jinchan
  * @data 2024/2/1
  */
-public class StringUtils {
+public final class StringUtils {
+    private StringUtils() {
+    }
     /**
      * 字符串json数组转Long类型set集合
      *

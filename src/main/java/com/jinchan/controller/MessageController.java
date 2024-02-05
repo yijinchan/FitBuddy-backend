@@ -25,31 +25,38 @@ import java.util.List;
 
 import static com.jinchan.constant.RedisConstants.MESSAGE_BLOG_NUM_KEY;
 
+
 /**
- * 消息管理模块
- * @Author jinchan
- * @date 2024/2/1
+ * 消息控制器
+ *
+ * @author jinchan
+ * @date 2024/02/01
  */
 @RestController
 @RequestMapping("/message")
 @Api(tags = "消息管理模块")
 public class MessageController {
+
     /**
      * 消息服务
      */
     @Resource
     private MessageService messageService;
+
     /**
-     * redis服务
+     * redis
      */
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
     @Resource
     private UserService userService;
+
     /**
      * 用户是否有新消息
-     * @param request
-     * @return
+     *
+     * @param request 请求
+     * @return {@link BaseResponse}<{@link Boolean}>
      */
     @GetMapping
     @ApiOperation(value = "用户是否有新消息")
@@ -65,9 +72,10 @@ public class MessageController {
     }
 
     /**
-     * 获取用户消息数量
-     * @param request
-     * @return
+     * 获取用户新消息数量
+     *
+     * @param request 请求
+     * @return {@link BaseResponse}<{@link Long}>
      */
     @GetMapping("/num")
     @ApiOperation(value = "获取用户新消息数量")
@@ -84,8 +92,9 @@ public class MessageController {
 
     /**
      * 获取用户点赞消息数量
-     * @param request
-     * @return
+     *
+     * @param request 请求
+     * @return {@link BaseResponse}<{@link Long}>
      */
     @GetMapping("/like/num")
     @ApiOperation(value = "获取用户点赞消息数量")
@@ -102,8 +111,10 @@ public class MessageController {
 
     /**
      * 获取用户点赞消息
-     * @param request
-     * @return
+     *
+     * @param request     请求
+     * @param currentPage 当前页码
+     * @return {@link BaseResponse}<{@link Page}<{@link MessageVO}>>
      */
     @GetMapping("/like")
     @ApiOperation(value = "获取用户点赞消息")
@@ -114,14 +125,15 @@ public class MessageController {
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
-        Page<MessageVO> messageVOPage = messageService.pageLike(loginUser.getId(), currentPage);
-        return ResultUtils.success(messageVOPage);
+        Page<MessageVO> messageVoPage = messageService.pageLike(loginUser.getId(), currentPage);
+        return ResultUtils.success(messageVoPage);
     }
 
     /**
      * 获取用户博客消息数量
-     * @param request
-     * @return
+     *
+     * @param request 请求
+     * @return {@link BaseResponse}<{@link String}>
      */
     @GetMapping("/blog/num")
     @ApiOperation(value = "获取用户博客消息数量")
@@ -144,8 +156,9 @@ public class MessageController {
 
     /**
      * 获取用户博客消息
-     * @param request
-     * @return
+     *
+     * @param request 请求
+     * @return {@link BaseResponse}<{@link List}<{@link BlogVO}>>
      */
     @GetMapping("/blog")
     @ApiOperation(value = "获取用户博客消息")

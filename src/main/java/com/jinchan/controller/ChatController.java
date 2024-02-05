@@ -21,10 +21,12 @@ import java.util.List;
 
 import static com.jinchan.constant.ChatConstants.*;
 
+
 /**
+ * 聊天控制器
+ *
  * @author jinchan
- * @description: 聊天控制器
- * @date: 2024/02/01
+ * @date 2024/2/1
  */
 @RestController
 @RequestMapping("/chat")
@@ -35,6 +37,7 @@ public class ChatController {
      */
     @Resource
     private ChatService chatService;
+
     /**
      * 用户服务
      */
@@ -42,18 +45,21 @@ public class ChatController {
     private UserService userService;
 
     /**
-     * 获取私聊
+     * 私聊
      *
-     * @param chatRequest
-     * @param request
-     * @return BaseResponse<List < ChatMessageVO>>
+     * @param chatRequest 聊天请求
+     * @param request     请求
+     * @return {@link BaseResponse}<{@link List}<{@link ChatMessageVO}>>
      */
     @PostMapping("/privateChat")
     @ApiOperation(value = "获取私聊")
     @ApiImplicitParams(
-            {@ApiImplicitParam(name = "chatRequest", value = "聊天请求"),
-                    @ApiImplicitParam(name = "request", value = "request请求")})
-    public BaseResponse<List<ChatMessageVO>> getPrivateChat(@RequestBody ChatRequest chatRequest, HttpServletRequest request) {
+            {@ApiImplicitParam(name = "chatRequest",
+                    value = "聊天请求"),
+                    @ApiImplicitParam(name = "request",
+                            value = "request请求")})
+    public BaseResponse<List<ChatMessageVO>> getPrivateChat(@RequestBody ChatRequest chatRequest,
+                                                            HttpServletRequest request) {
         if (chatRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -66,18 +72,21 @@ public class ChatController {
     }
 
     /**
-     * 获取群聊
+     * 团队聊天
      *
-     * @param chatRequest
-     * @param request
-     * @return BaseResponse<List < ChatMessageVO>>
+     * @param chatRequest 聊天请求
+     * @param request     请求
+     * @return {@link BaseResponse}<{@link List}<{@link ChatMessageVO}>>
      */
     @PostMapping("/teamChat")
     @ApiOperation(value = "获取队伍聊天")
     @ApiImplicitParams(
-            {@ApiImplicitParam(name = "chatRequest", value = "聊天请求"),
-                    @ApiImplicitParam(name = "request", value = "request请求")})
-    public BaseResponse<List<ChatMessageVO>> getTeamChat(@RequestBody ChatRequest chatRequest, HttpServletRequest request) {
+            {@ApiImplicitParam(name = "chatRequest",
+                    value = "聊天请求"),
+                    @ApiImplicitParam(name = "request",
+                            value = "request请求")})
+    public BaseResponse<List<ChatMessageVO>> getTeamChat(@RequestBody ChatRequest chatRequest,
+                                                         HttpServletRequest request) {
         if (chatRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求有误");
         }
@@ -90,10 +99,10 @@ public class ChatController {
     }
 
     /**
-     * 获取大厅聊天
+     * 大厅聊天
      *
-     * @param request
-     * @return
+     * @param request 请求
+     * @return {@link BaseResponse}<{@link List}<{@link ChatMessageVO}>>
      */
     @GetMapping("/hallChat")
     @ApiOperation(value = "获取大厅聊天")

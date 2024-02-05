@@ -6,6 +6,7 @@ import com.jinchan.model.domain.User;
 import com.jinchan.model.vo.UserVO;
 import com.jinchan.service.FollowService;
 import com.jinchan.service.UserService;
+import lombok.extern.log4j.Log4j2;
 import org.quartz.JobExecutionContext;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -21,6 +22,7 @@ import static com.jinchan.constant.RedisConstants.USER_RECOMMEND_KEY;
 import static com.jinchan.constant.RedissonConstant.*;
 import static com.jinchan.constant.SystemConstants.DEFAULT_CACHE_PAGE;
 
+@Log4j2
 public class UserRecommendationCache extends QuartzJobBean {
     @Resource
     private RedissonClient redissonClient;
@@ -39,7 +41,7 @@ public class UserRecommendationCache extends QuartzJobBean {
         RLock lock = redissonClient.getLock(USER_RECOMMEND_LOCK);
         try {
             if (lock.tryLock(DEFAULT_WAIT_TIME, DEFAULT_LEASE_TIME, TimeUnit.MICROSECONDS)) {
-                System.out.println("开始用户缓存");
+                log.info("开始用户缓存");
                 long begin = System.currentTimeMillis();
                 List<User> userList = userService.list();
                 for (User user : userList) {
@@ -52,13 +54,13 @@ public class UserRecommendationCache extends QuartzJobBean {
                     }
                 }
                 long end = System.currentTimeMillis();
-                System.out.println("用户缓存结束，耗时" + (end - begin));
+                log.info("用户缓存结束，耗时" + (end - begin));
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
             if (lock.isHeldByCurrentThread()) {
-                System.out.println("unLock: " + Thread.currentThread().getId());
+                log.info("unLock: " + Thread.currentThread().getId());
                 lock.unlock();
             }
         }
